@@ -1,0 +1,76 @@
+.btn-icon-add {
+  color: #43a047;
+  filter: drop-shadow(0 1px 2px #b2dfdb);
+}
+.btn-icon-edit {
+  color: #fbc02d;
+  filter: drop-shadow(0 1px 2px #fff9c4);
+}
+.btn-icon-delete {
+  color: #d32f2f;
+  filter: drop-shadow(0 1px 2px #ffcdd2);
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e3f2fd;
+  border-top: 2px solid #1976d2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Estilos para la tabla */
+table th {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+table td {
+  font-size: 14px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+table tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Estilos para los formularios */
+form label {
+  font-weight: 500;
+  color: #333;
+  display: block;
+  margin-bottom: 4px;
+}
+
+form input,
+form select {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+form input:focus,
+form select:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+/* Estilos para los botones */
+.custom-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.custom-btn:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
