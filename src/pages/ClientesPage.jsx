@@ -498,19 +498,6 @@ function ClientesPage() {
                   zIndex: 3,
                 }}
               >
-                ID
-              </th>
-              <th
-                style={{
-                  padding: "14px 10px",
-                  textAlign: "left",
-                  borderBottom: "2px solid #e0e0e0",
-                  position: "sticky",
-                  top: 0,
-                  background: "#1976d2",
-                  zIndex: 3,
-                }}
-              >
                 Nombre
               </th>
               <th
@@ -610,7 +597,7 @@ function ClientesPage() {
             {paginatedClientes.length === 0 ? (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={8}
                   style={{ textAlign: "center", color: "#888", padding: 32 }}
                 >
                   No hay clientes registrados.
@@ -646,14 +633,6 @@ function ClientesPage() {
                         : "#fff")
                   }
                 >
-                  <td
-                    style={{
-                      padding: "12px 10px",
-                      borderBottom: "1px solid #f0f0f0",
-                    }}
-                  >
-                    {cli.id}
-                  </td>
                   <td
                     style={{
                       padding: "12px 10px",

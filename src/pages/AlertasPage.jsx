@@ -551,13 +551,10 @@ function DetalleVentaPage() {
           >
             <thead>
               <tr>
-                <th style={{ textAlign: "center", verticalAlign: "middle" }}>
-                  ID
-                </th>
-                <th style={{ textAlign: "center", verticalAlign: "middle" }}>
+                <th style={{ textAlign: "left", verticalAlign: "middle" }}>
                   Tipo
                 </th>
-                <th style={{ textAlign: "center", verticalAlign: "middle" }}>
+                <th style={{ textAlign: "left", verticalAlign: "middle" }}>
                   Título
                 </th>
                 <th style={{ textAlign: "center", verticalAlign: "middle" }}>
@@ -575,9 +572,9 @@ function DetalleVentaPage() {
               {paginatedAlertas.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="6"
+                    colSpan="5"
                     style={{
-                      textAlign: "center",
+                      textAlign: "left",
                       padding: "2rem",
                       verticalAlign: "middle",
                     }}
@@ -609,29 +606,20 @@ function DetalleVentaPage() {
                       opacity: alerta.estado === "INACTIVA" ? 0.7 : 1,
                     }}
                   >
-                    <td
-                      style={{ textAlign: "center", verticalAlign: "middle" }}
-                    >
-                      {alerta.id}
-                    </td>
-                    <td
-                      style={{ textAlign: "center", verticalAlign: "middle" }}
-                    >
+                    <td style={{ textAlign: "left", verticalAlign: "middle" }}>
                       <div
                         style={{
                           display: "flex",
                           alignItems: "center",
                           gap: 8,
-                          justifyContent: "center",
+                          justifyContent: "flex-start",
                         }}
                       >
                         {getTipoIcon(alerta.tipo)}
                         {formatTipo(alerta.tipo)}
                       </div>
                     </td>
-                    <td
-                      style={{ textAlign: "center", verticalAlign: "middle" }}
-                    >
+                    <td style={{ textAlign: "left", verticalAlign: "middle" }}>
                       {alerta.titulo}
                     </td>
                     <td

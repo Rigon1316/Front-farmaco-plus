@@ -208,20 +208,51 @@ function VentaPage() {
         <FaShoppingCart style={{ fontSize: 28, color: "#ff9800" }} /> Gestión de
         Ventas
       </h2>
-
-      {/* Campo de búsqueda por ID */}
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-end",
-          marginTop: "20px",
-          marginBottom: "20px",
+          justifyContent: "space-between",
+          alignItems: "center",
+          margin: "20px 0 0 0",
+          gap: 16,
         }}
       >
-        <div
-          className="search-container"
-          style={{ display: "flex", alignItems: "center" }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <label
+            style={{
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "#444",
+              marginRight: "12px",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            Filtrar ventas:
+          </label>
+          <select
+            value={filtro}
+            onChange={(e) => handleFiltroChange(e.target.value)}
+            style={{
+              padding: "8px 12px",
+              borderRadius: "6px",
+              border: "1px solid #ddd",
+              backgroundColor: "#fff",
+              fontSize: "14px",
+              cursor: "pointer",
+              minWidth: "200px",
+            }}
+          >
+            <option value="todos">Todas las ventas</option>
+            <option value="PAGADA">Ventas pagadas</option>
+            <option value="PENDIENTE">Ventas pendientes</option>
+            <option value="CANCELADA">Ventas canceladas</option>
+            <option value="DEVUELTA">Ventas devueltas</option>
+            <option value="dia">Ventas del día</option>
+            <option value="top">Top ventas</option>
+          </select>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <label
             htmlFor="busqueda-id"
             style={{
@@ -313,19 +344,6 @@ function VentaPage() {
                 zIndex: 2,
               }}
             >
-              <th
-                style={{
-                  padding: "14px 10px",
-                  textAlign: "left",
-                  borderBottom: "2px solid #e0e0e0",
-                  position: "sticky",
-                  top: 0,
-                  background: "#1976d2",
-                  zIndex: 3,
-                }}
-              >
-                ID
-              </th>
               <th
                 style={{
                   padding: "14px 10px",
@@ -436,7 +454,7 @@ function VentaPage() {
             {paginatedVentas.length === 0 ? (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={8}
                   style={{ textAlign: "center", color: "#888", padding: 32 }}
                 >
                   No hay ventas registradas.
@@ -472,14 +490,6 @@ function VentaPage() {
                         : "#fff")
                   }
                 >
-                  <td
-                    style={{
-                      padding: "12px 10px",
-                      borderBottom: "1px solid #f0f0f0",
-                    }}
-                  >
-                    {venta.id}
-                  </td>
                   <td
                     style={{
                       padding: "12px 10px",
@@ -586,53 +596,6 @@ function VentaPage() {
           ))}
         </div>
       )}
-
-      {/* Selector de filtros en la parte inferior */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          marginTop: "20px",
-          padding: "16px",
-          backgroundColor: "#f8f9fa",
-          borderRadius: "8px",
-          border: "1px solid #e9ecef",
-        }}
-      >
-        <label
-          style={{
-            fontSize: "14px",
-            fontWeight: "500",
-            color: "#444",
-            marginRight: "12px",
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          Filtrar ventas:
-        </label>
-        <select
-          value={filtro}
-          onChange={(e) => handleFiltroChange(e.target.value)}
-          style={{
-            padding: "8px 12px",
-            borderRadius: "6px",
-            border: "1px solid #ddd",
-            backgroundColor: "#fff",
-            fontSize: "14px",
-            cursor: "pointer",
-            minWidth: "200px",
-          }}
-        >
-          <option value="todos">Todas las ventas</option>
-          <option value="PAGADA">Ventas pagadas</option>
-          <option value="PENDIENTE">Ventas pendientes</option>
-          <option value="CANCELADA">Ventas canceladas</option>
-          <option value="DEVUELTA">Ventas devueltas</option>
-          <option value="dia">Ventas del día</option>
-          <option value="top">Top ventas</option>
-        </select>
-      </div>
     </div>
   );
 }
