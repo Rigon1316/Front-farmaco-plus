@@ -339,7 +339,48 @@ function MedicamentosPage() {
           <FaPills size={32} color="#8e24aa" />
           <h1>Gestión de Medicamentos</h1>
         </div>
-        <div className="page-actions"></div>
+        <div
+          className="page-actions"
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            padding: "16px 0",
+            borderRadius: "8px",
+            minWidth: 340,
+            gap: 8,
+          }}
+        >
+          <label
+            style={{
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "#444",
+              marginRight: "12px",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            Filtrar medicamentos:
+          </label>
+          <select
+            value={filtro}
+            onChange={(e) => handleFiltroChange(e.target.value)}
+            style={{
+              padding: "8px 12px",
+              borderRadius: "6px",
+              border: "1px solid #ddd",
+              backgroundColor: "#fff",
+              fontSize: "14px",
+              cursor: "pointer",
+              minWidth: "200px",
+            }}
+          >
+            <option value="todos">Todos los medicamentos</option>
+            <option value="agotados">Medicamentos agotados</option>
+            <option value="proximos-caducar">Próximos a caducar</option>
+          </select>
+        </div>
       </div>
 
       {/* Mensajes de estado */}
@@ -954,47 +995,7 @@ function MedicamentosPage() {
       )}
 
       {/* Selector de filtros en la parte inferior */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          marginTop: "20px",
-          padding: "16px",
-          backgroundColor: "#f8f9fa",
-          borderRadius: "8px",
-          border: "1px solid #e9ecef",
-        }}
-      >
-        <label
-          style={{
-            fontSize: "14px",
-            fontWeight: "500",
-            color: "#444",
-            marginRight: "12px",
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          Filtrar medicamentos:
-        </label>
-        <select
-          value={filtro}
-          onChange={(e) => handleFiltroChange(e.target.value)}
-          style={{
-            padding: "8px 12px",
-            borderRadius: "6px",
-            border: "1px solid #ddd",
-            backgroundColor: "#fff",
-            fontSize: "14px",
-            cursor: "pointer",
-            minWidth: "200px",
-          }}
-        >
-          <option value="todos">Todos los medicamentos</option>
-          <option value="agotados">Medicamentos agotados</option>
-          <option value="proximos-caducar">Próximos a caducar</option>
-        </select>
-      </div>
+      {/* Este bloque se elimina porque ya está arriba */}
 
       {/* Modal para agregar */}
       <Modal
