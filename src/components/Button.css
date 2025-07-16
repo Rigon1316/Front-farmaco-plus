@@ -43,3 +43,12 @@
 .custom-btn.secondary:hover {
   background: #9e9e9e;
 }
+
+.custom-btn.info {
+  background: #2196f3;
+  color: #fff;
+}
+
+.custom-btn.info:hover {
+  background: #1976d2;
+}

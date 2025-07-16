@@ -40,6 +40,7 @@ function ClientesPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [busquedaId, setBusquedaId] = useState(""); // Nuevo estado para búsqueda por ID
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -265,6 +266,42 @@ function ClientesPage() {
     </div>
   );
 
+  // Nueva función para buscar cliente por ID
+  const buscarClientePorId = async (id) => {
+    if (!id || id.trim() === "") {
+      fetchClientes();
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_URL}/${id}`);
+      if (!res.ok) {
+        if (res.status === 404) {
+          setError("No se encontró un cliente con ese ID");
+          setClientes([]);
+        } else {
+          throw new Error(`Error ${res.status}: ${res.statusText}`);
+        }
+      } else {
+        const cliente = await res.json();
+        setClientes([cliente]); // Mostrar solo el cliente encontrado
+      }
+    } catch (err) {
+      console.error("Error buscando cliente por ID:", err);
+      setError("Error al buscar el cliente");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Función para manejar la búsqueda por ID
+  const handleBusquedaId = (e) => {
+    e.preventDefault();
+    buscarClientePorId(busquedaId);
+  };
+
   return (
     <div>
       <h2
@@ -364,6 +401,57 @@ function ClientesPage() {
         >
           Eliminar
         </Button>
+
+        {/* Campo de búsqueda por ID */}
+        <div className="search-container" style={{ marginLeft: "auto" }}>
+          <label
+            htmlFor="busqueda-id"
+            style={{
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "#444",
+              marginRight: "8px",
+            }}
+          >
+            Buscar por ID:
+          </label>
+          <form
+            onSubmit={handleBusquedaId}
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <input
+              id="busqueda-id"
+              type="number"
+              value={busquedaId}
+              onChange={(e) => setBusquedaId(e.target.value)}
+              placeholder="Ingrese ID"
+              style={{
+                padding: "8px 12px",
+                borderRadius: "6px",
+                border: "1px solid #ddd",
+                backgroundColor: "#fff",
+                fontSize: "14px",
+                width: "120px",
+                marginRight: "8px",
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                padding: "8px 12px",
+                borderRadius: "6px",
+                border: "1px solid #1976d2",
+                backgroundColor: "#1976d2",
+                color: "#fff",
+                fontSize: "14px",
+                cursor: "pointer",
+                fontWeight: "500",
+              }}
+            >
+              Buscar
+            </button>
+          </form>
+        </div>
       </div>
 
       {/* Tabla de clientes */}
@@ -379,7 +467,7 @@ function ClientesPage() {
       >
         <table
           style={{
-            minWidth: 900,
+            minWidth: 1200,
             width: "100%",
             borderCollapse: "separate",
             borderSpacing: 0,
@@ -392,39 +480,130 @@ function ClientesPage() {
           <thead>
             <tr
               style={{
-                background: "#f5f5f5",
+                background: "#1976d2",
+                color: "#fff",
                 position: "sticky",
                 top: 0,
                 zIndex: 2,
               }}
             >
-              {/* Aquí van los <th> originales, solo cambia el style */}
-              {[
-                "ID",
-                "Nombre",
-                "Apellido",
-                "Email",
-                "Teléfono",
-                "Dirección",
-                "DNI",
-                "Fecha Nacimiento",
-                "Estado",
-              ].map((col, i) => (
-                <th
-                  key={col}
-                  style={{
-                    padding: "14px 10px",
-                    textAlign: "left",
-                    borderBottom: "2px solid #e0e0e0",
-                    position: "sticky",
-                    top: 0,
-                    background: "#f5f5f5",
-                    zIndex: 3,
-                  }}
-                >
-                  {col}
-                </th>
-              ))}
+              <th
+                style={{
+                  padding: "14px 10px",
+                  textAlign: "left",
+                  borderBottom: "2px solid #e0e0e0",
+                  position: "sticky",
+                  top: 0,
+                  background: "#1976d2",
+                  zIndex: 3,
+                }}
+              >
+                ID
+              </th>
+              <th
+                style={{
+                  padding: "14px 10px",
+                  textAlign: "left",
+                  borderBottom: "2px solid #e0e0e0",
+                  position: "sticky",
+                  top: 0,
+                  background: "#1976d2",
+                  zIndex: 3,
+                }}
+              >
+                Nombre
+              </th>
+              <th
+                style={{
+                  padding: "14px 10px",
+                  textAlign: "left",
+                  borderBottom: "2px solid #e0e0e0",
+                  position: "sticky",
+                  top: 0,
+                  background: "#1976d2",
+                  zIndex: 3,
+                }}
+              >
+                Apellido
+              </th>
+              <th
+                style={{
+                  padding: "14px 10px",
+                  textAlign: "left",
+                  borderBottom: "2px solid #e0e0e0",
+                  position: "sticky",
+                  top: 0,
+                  background: "#1976d2",
+                  zIndex: 3,
+                }}
+              >
+                Email
+              </th>
+              <th
+                style={{
+                  padding: "14px 10px",
+                  textAlign: "left",
+                  borderBottom: "2px solid #e0e0e0",
+                  position: "sticky",
+                  top: 0,
+                  background: "#1976d2",
+                  zIndex: 3,
+                }}
+              >
+                Teléfono
+              </th>
+              <th
+                style={{
+                  padding: "14px 10px",
+                  textAlign: "left",
+                  borderBottom: "2px solid #e0e0e0",
+                  position: "sticky",
+                  top: 0,
+                  background: "#1976d2",
+                  zIndex: 3,
+                }}
+              >
+                Dirección
+              </th>
+              <th
+                style={{
+                  padding: "14px 10px",
+                  textAlign: "left",
+                  borderBottom: "2px solid #e0e0e0",
+                  position: "sticky",
+                  top: 0,
+                  background: "#1976d2",
+                  zIndex: 3,
+                }}
+              >
+                DNI
+              </th>
+              <th
+                style={{
+                  padding: "14px 10px",
+                  textAlign: "left",
+                  borderBottom: "2px solid #e0e0e0",
+                  position: "sticky",
+                  top: 0,
+                  background: "#1976d2",
+                  zIndex: 3,
+                }}
+              >
+                Fecha Nacimiento
+              </th>
+              <th
+                style={{
+                  padding: "14px 10px",
+                  textAlign: "left",
+                  borderBottom: "2px solid #e0e0e0",
+                  position: "sticky",
+                  top: 0,
+                  background: "#1976d2",
+                  zIndex: 3,
+                }}
+              >
+                Estado
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -548,45 +727,38 @@ function ClientesPage() {
         </table>
       </div>
       {/* Controles de paginación */}
+      {/* Paginación */}
       {totalPages > 1 && (
         <div
           style={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            gap: 8,
-            margin: "18px 0 0 0",
+            gap: 18,
+            marginTop: "1.5rem",
+            fontSize: 22,
+            fontWeight: 400,
+            color: "#1976d2",
+            userSelect: "none",
           }}
         >
-          <Button
-            className="secondary"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            style={{ minWidth: 40 }}
-          >
-            Anterior
-          </Button>
           {Array.from({ length: totalPages }, (_, i) => (
-            <Button
+            <span
               key={i + 1}
-              className={currentPage === i + 1 ? "custom-btn" : "secondary"}
               onClick={() => setCurrentPage(i + 1)}
               style={{
-                minWidth: 36,
-                fontWeight: currentPage === i + 1 ? 700 : 500,
+                cursor: "pointer",
+                color: currentPage === i + 1 ? "#fff" : "#1976d2",
+                background: currentPage === i + 1 ? "#1976d2" : "transparent",
+                borderRadius: 6,
+                padding: "2px 14px",
+                fontWeight: currentPage === i + 1 ? 600 : 400,
+                transition: "all 0.15s",
               }}
             >
               {i + 1}
-            </Button>
+            </span>
           ))}
-          <Button
-            className="secondary"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            style={{ minWidth: 40 }}
-          >
-            Siguiente
-          </Button>
         </div>
       )}
 
@@ -604,10 +776,12 @@ function ClientesPage() {
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: "24px 16px",
+              gap: "16px",
               maxHeight: "70vh",
               overflowY: "auto",
               padding: "8px",
+              width: "100%",
+              boxSizing: "border-box",
             }}
           >
             <label
@@ -852,23 +1026,19 @@ function ClientesPage() {
       >
         <form onSubmit={handleEdit}>
           <div
+            className="formulario-medicamento-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: "24px 16px",
+              gap: "16px",
               maxHeight: "70vh",
               overflowY: "auto",
               padding: "8px",
+              width: "100%",
+              boxSizing: "border-box",
             }}
           >
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Nombre: *
               <input
                 name="nombre"
@@ -879,22 +1049,25 @@ function ClientesPage() {
                 maxLength="100"
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="Ingrese el nombre"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Apellido: *
               <input
                 name="apellido"
@@ -905,22 +1078,25 @@ function ClientesPage() {
                 maxLength="100"
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="Ingrese el apellido"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Email: *
               <input
                 name="email"
@@ -931,22 +1107,25 @@ function ClientesPage() {
                 maxLength="150"
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="ejemplo@email.com"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Teléfono: *
               <input
                 name="telefono"
@@ -958,22 +1137,27 @@ function ClientesPage() {
                 maxLength="10"
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="1234567890"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
             <label
-              style={{
-                gridColumn: "1 / -1",
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
+              className="form-field-block"
+              style={{ gridColumn: "1 / -1" }}
             >
               Dirección:
               <input
@@ -984,22 +1168,25 @@ function ClientesPage() {
                 maxLength="200"
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="Ingrese la dirección"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               DNI: *
               <input
                 name="dni"
@@ -1011,22 +1198,25 @@ function ClientesPage() {
                 maxLength="8"
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="12345678"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Fecha Nacimiento:
               <input
                 name="fechaNacimiento"
@@ -1035,21 +1225,24 @@ function ClientesPage() {
                 onChange={handleChange}
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
                 }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Estado: *
               <select
                 name="estado"
@@ -1058,10 +1251,21 @@ function ClientesPage() {
                 required
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
+                  backgroundColor: "#fff",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
                 }}
               >
                 {estados.map((est) => (
@@ -1073,21 +1277,81 @@ function ClientesPage() {
             </label>
           </div>
 
-          <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
-            <Button type="submit" disabled={loading}>
+          <div
+            style={{
+              display: "flex",
+              gap: "16px",
+              marginTop: "24px",
+              paddingTop: "20px",
+              borderTop: "1px solid #e0e0e0",
+            }}
+          >
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                flex: 1,
+                padding: "10px 20px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: "#1976d2",
+                color: "white",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
+                transition: "all 0.2s ease",
+                boxShadow: "0 2px 4px rgba(25, 118, 210, 0.2)",
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.target.style.backgroundColor = "#1256a3";
+                  e.target.style.transform = "translateY(-1px)";
+                  e.target.style.boxShadow =
+                    "0 4px 8px rgba(25, 118, 210, 0.3)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "#1976d2";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 2px 4px rgba(25, 118, 210, 0.2)";
+              }}
+            >
               {loading ? "Actualizando..." : "Actualizar"}
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              className="secondary"
               onClick={() => {
                 setOpenEdit(false);
                 setSelected(null);
                 resetForm();
               }}
+              style={{
+                flex: 1,
+                padding: "10px 20px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: "#ff6b6b",
+                color: "white",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = "#ff5252";
+                e.target.style.transform = "translateY(-1px)";
+                e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "#ff6b6b";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+              }}
             >
               Cancelar
-            </Button>
+            </button>
           </div>
         </form>
       </Modal>

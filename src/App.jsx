@@ -3,7 +3,7 @@ import HomePage from "./pages/HomePage.jsx";
 import MedicamentosPage from "./pages/MedicamentosPage.jsx";
 import ClientesPage from "./pages/ClientesPage.jsx";
 import AlertasPage from "./pages/AlertasPage.jsx";
-import VentaPage from "./pages/VentasPage.jsx";
+import VentaPage from "./pages/VentaPage.jsx";
 import ConsultasIA from "./pages/ConsultasIA.jsx";
 import MainLayout from "./layouts/MainLayout.jsx";
 import "./App.css";

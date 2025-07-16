@@ -1027,13 +1027,45 @@ function DetalleVentaPage() {
           onClose={() => setOpenRead(false)}
           title="Descripción de la Alerta"
         >
-          <div style={{ padding: 16, fontSize: 16 }}>
+          <div
+            style={{
+              padding: 16,
+              fontSize: 16,
+              position: "relative",
+              minHeight: 120,
+            }}
+          >
             <div style={{ fontWeight: "bold", fontSize: 18, marginBottom: 8 }}>
               {alertaLeida?.titulo}
             </div>
             <div style={{ marginBottom: 24 }}>
               {alertaLeida?.descripcion || alertaLeida?.mensaje}
             </div>
+            {alertaLeida && (
+              <button
+                style={{
+                  position: "absolute",
+                  right: 24,
+                  bottom: 16,
+                  background: "#1976d2",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "12px 28px",
+                  fontWeight: 600,
+                  fontSize: "16px",
+                  boxShadow: "0 2px 8px rgba(25,118,210,0.10)",
+                  cursor: "pointer",
+                  transition: "background 0.2s",
+                }}
+                onClick={() => {
+                  handleDelete(alertaLeida.id);
+                  setOpenRead(false);
+                }}
+              >
+                Realizado
+              </button>
+            )}
           </div>
         </Modal>
       </div>

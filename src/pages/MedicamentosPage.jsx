@@ -50,12 +50,15 @@ function MedicamentosPage() {
   const [medicamentos, setMedicamentos] = useState([]);
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
+  const [openDetails, setOpenDetails] = useState(false); // Nuevo estado para modal de detalles
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [filtro, setFiltro] = useState("todos"); // Nuevo estado para el filtro
+  const [busquedaId, setBusquedaId] = useState(""); // Nuevo estado para búsqueda por ID
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -93,6 +96,101 @@ function MedicamentosPage() {
       setError(`Error de conexión: ${err.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Nueva función para obtener medicamentos agotados
+  const fetchMedicamentosAgotados = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_URL}/agotados`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Error ${res.status}: ${errorText}`);
+      }
+      const data = await res.json();
+      setMedicamentos(data);
+    } catch (err) {
+      console.error("Error fetching medicamentos agotados:", err);
+      setError("No se pudieron cargar los medicamentos agotados");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Nueva función para obtener medicamentos próximos a caducar
+  const fetchMedicamentosProximosACaducar = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_URL}/caducidad?diasAntes=30`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Error ${res.status}: ${errorText}`);
+      }
+      const data = await res.json();
+      setMedicamentos(data);
+    } catch (err) {
+      console.error("Error fetching medicamentos próximos a caducar:", err);
+      setError("No se pudieron cargar los medicamentos próximos a caducar");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Nueva función para buscar medicamento por ID
+  const buscarMedicamentoPorId = async (id) => {
+    if (!id || id.trim() === "") {
+      fetchMedicamentos();
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${API_URL}/${id}`);
+      if (!res.ok) {
+        if (res.status === 404) {
+          setError("No se encontró un medicamento con ese ID");
+          setMedicamentos([]);
+        } else {
+          throw new Error(`Error ${res.status}: ${res.statusText}`);
+        }
+      } else {
+        const medicamento = await res.json();
+        setMedicamentos([medicamento]); // Mostrar solo el medicamento encontrado
+      }
+    } catch (err) {
+      console.error("Error buscando medicamento por ID:", err);
+      setError("Error al buscar el medicamento");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Función para manejar la búsqueda por ID
+  const handleBusquedaId = (e) => {
+    e.preventDefault();
+    buscarMedicamentoPorId(busquedaId);
+  };
+
+  // Función para manejar el cambio de filtro
+  const handleFiltroChange = (nuevoFiltro) => {
+    setFiltro(nuevoFiltro);
+    setCurrentPage(1); // Resetear a la primera página
+
+    switch (nuevoFiltro) {
+      case "agotados":
+        fetchMedicamentosAgotados();
+        break;
+      case "proximos-caducar":
+        fetchMedicamentosProximosACaducar();
+        break;
+      case "todos":
+      default:
+        fetchMedicamentos();
+        break;
     }
   };
 
@@ -228,20 +326,21 @@ function MedicamentosPage() {
   const endIndex = startIndex + itemsPerPage;
   const paginatedMedicamentos = medicamentos.slice(startIndex, endIndex);
 
+  // Función para abrir el modal de detalles
+  const openDetailsModal = (med) => {
+    setSelected(med);
+    setOpenDetails(true);
+  };
+
   return (
     <div>
-      <h2
-        style={{
-          marginBottom: 0,
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          color: "#8e24aa",
-        }}
-      >
-        <FaPills style={{ fontSize: 28, color: "#8e24aa" }} /> Gestión de
-        Medicamentos
-      </h2>
+      <div className="page-header">
+        <div className="page-title">
+          <FaPills size={32} color="#8e24aa" />
+          <h1>Gestión de Medicamentos</h1>
+        </div>
+        <div className="page-actions"></div>
+      </div>
 
       {/* Mensajes de estado */}
       {loading && (
@@ -327,6 +426,57 @@ function MedicamentosPage() {
         >
           Eliminar
         </Button>
+
+        {/* Campo de búsqueda por ID */}
+        <div className="search-container" style={{ marginLeft: "auto" }}>
+          <label
+            htmlFor="busqueda-id"
+            style={{
+              fontSize: "14px",
+              fontWeight: "500",
+              color: "#444",
+              marginRight: "8px",
+            }}
+          >
+            Buscar por ID:
+          </label>
+          <form
+            onSubmit={handleBusquedaId}
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <input
+              id="busqueda-id"
+              type="number"
+              value={busquedaId}
+              onChange={(e) => setBusquedaId(e.target.value)}
+              placeholder="Ingrese ID"
+              style={{
+                padding: "8px 12px",
+                borderRadius: "6px",
+                border: "1px solid #ddd",
+                backgroundColor: "#fff",
+                fontSize: "14px",
+                width: "120px",
+                marginRight: "8px",
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                padding: "8px 12px",
+                borderRadius: "6px",
+                border: "1px solid #1976d2",
+                backgroundColor: "#1976d2",
+                color: "#fff",
+                fontSize: "14px",
+                cursor: "pointer",
+                fontWeight: "500",
+              }}
+            >
+              Buscar
+            </button>
+          </form>
+        </div>
       </div>
       <div
         style={{
@@ -542,6 +692,19 @@ function MedicamentosPage() {
               >
                 Requiere Receta
               </th>
+              <th
+                style={{
+                  padding: "14px 10px",
+                  textAlign: "left",
+                  borderBottom: "2px solid #e0e0e0",
+                  position: "sticky",
+                  top: 0,
+                  background: "#1976d2",
+                  zIndex: 3,
+                }}
+              >
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -730,6 +893,24 @@ function MedicamentosPage() {
                       {med.requiereReceta ? "Sí" : "No"}
                     </span>
                   </td>
+                  <td
+                    style={{
+                      padding: "12px 10px",
+                      borderBottom: "1px solid #f0f0f0",
+                    }}
+                  >
+                    <Button
+                      icon={<FaPills />}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Evita que el botón de acción abra el modal de detalles
+                        openDetailsModal(med);
+                      }}
+                      disabled={loading}
+                      className="custom-btn info"
+                    >
+                      Detalles
+                    </Button>
+                  </td>
                 </tr>
               ))
             )}
@@ -737,48 +918,83 @@ function MedicamentosPage() {
         </table>
       </div>
 
-      {/* Controles de paginación */}
+      {/* Paginación */}
       {totalPages > 1 && (
         <div
           style={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            gap: 8,
-            margin: "18px 0 0 0",
+            gap: 18,
+            marginTop: "1.5rem",
+            fontSize: 22,
+            fontWeight: 400,
+            color: "#1976d2",
+            userSelect: "none",
           }}
         >
-          <Button
-            className="secondary"
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            style={{ minWidth: 40 }}
-          >
-            Anterior
-          </Button>
           {Array.from({ length: totalPages }, (_, i) => (
-            <Button
+            <span
               key={i + 1}
-              className={currentPage === i + 1 ? "custom-btn" : "secondary"}
               onClick={() => setCurrentPage(i + 1)}
               style={{
-                minWidth: 36,
-                fontWeight: currentPage === i + 1 ? 700 : 500,
+                cursor: "pointer",
+                color: currentPage === i + 1 ? "#fff" : "#1976d2",
+                background: currentPage === i + 1 ? "#1976d2" : "transparent",
+                borderRadius: 6,
+                padding: "2px 14px",
+                fontWeight: currentPage === i + 1 ? 600 : 400,
+                transition: "all 0.15s",
               }}
             >
               {i + 1}
-            </Button>
+            </span>
           ))}
-          <Button
-            className="secondary"
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            style={{ minWidth: 40 }}
-          >
-            Siguiente
-          </Button>
         </div>
       )}
+
+      {/* Selector de filtros en la parte inferior */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          marginTop: "20px",
+          padding: "16px",
+          backgroundColor: "#f8f9fa",
+          borderRadius: "8px",
+          border: "1px solid #e9ecef",
+        }}
+      >
+        <label
+          style={{
+            fontSize: "14px",
+            fontWeight: "500",
+            color: "#444",
+            marginRight: "12px",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          Filtrar medicamentos:
+        </label>
+        <select
+          value={filtro}
+          onChange={(e) => handleFiltroChange(e.target.value)}
+          style={{
+            padding: "8px 12px",
+            borderRadius: "6px",
+            border: "1px solid #ddd",
+            backgroundColor: "#fff",
+            fontSize: "14px",
+            cursor: "pointer",
+            minWidth: "200px",
+          }}
+        >
+          <option value="todos">Todos los medicamentos</option>
+          <option value="agotados">Medicamentos agotados</option>
+          <option value="proximos-caducar">Próximos a caducar</option>
+        </select>
+      </div>
 
       {/* Modal para agregar */}
       <Modal
@@ -794,10 +1010,12 @@ function MedicamentosPage() {
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: "24px 16px",
+              gap: "16px",
               maxHeight: "70vh",
               overflowY: "auto",
               padding: "8px",
+              width: "100%",
+              boxSizing: "border-box",
             }}
           >
             <label
@@ -1156,17 +1374,77 @@ function MedicamentosPage() {
               Requiere Receta
             </label>
           </div>
-          <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
-            <Button type="submit" disabled={loading}>
+          <div
+            style={{
+              display: "flex",
+              gap: "16px",
+              marginTop: "24px",
+              paddingTop: "20px",
+              borderTop: "1px solid #e0e0e0",
+            }}
+          >
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                flex: 1,
+                padding: "10px 20px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: "#1976d2",
+                color: "white",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
+                transition: "all 0.2s ease",
+                boxShadow: "0 2px 4px rgba(25, 118, 210, 0.2)",
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.target.style.backgroundColor = "#1256a3";
+                  e.target.style.transform = "translateY(-1px)";
+                  e.target.style.boxShadow =
+                    "0 4px 8px rgba(25, 118, 210, 0.3)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "#1976d2";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 2px 4px rgba(25, 118, 210, 0.2)";
+              }}
+            >
               {loading ? "Guardando..." : "Guardar"}
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              className="secondary"
               onClick={() => setOpenAdd(false)}
+              style={{
+                flex: 1,
+                padding: "10px 20px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: "#ff6b6b",
+                color: "white",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = "#ff5252";
+                e.target.style.transform = "translateY(-1px)";
+                e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "#ff6b6b";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+              }}
             >
               Cancelar
-            </Button>
+            </button>
           </div>
         </form>
       </Modal>
@@ -1182,23 +1460,19 @@ function MedicamentosPage() {
       >
         <form onSubmit={handleEdit}>
           <div
+            className="formulario-medicamento-grid"
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: "24px 16px",
+              gap: "16px",
               maxHeight: "70vh",
               overflowY: "auto",
               padding: "8px",
+              width: "100%",
+              boxSizing: "border-box",
             }}
           >
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Nombre: *
               <input
                 name="nombre"
@@ -1209,22 +1483,25 @@ function MedicamentosPage() {
                 maxLength="100"
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="Ingrese el nombre"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Principio Activo:
               <input
                 name="principioActivo"
@@ -1234,22 +1511,25 @@ function MedicamentosPage() {
                 maxLength="100"
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="Ingrese el principio activo"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Presentación:
               <input
                 name="presentacion"
@@ -1259,22 +1539,25 @@ function MedicamentosPage() {
                 maxLength="100"
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="Ingrese la presentación"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Concentración:
               <input
                 name="concentracion"
@@ -1284,22 +1567,25 @@ function MedicamentosPage() {
                 maxLength="100"
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="Ingrese la concentración"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Laboratorio:
               <input
                 name="laboratorio"
@@ -1309,22 +1595,25 @@ function MedicamentosPage() {
                 maxLength="100"
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="Ingrese el laboratorio"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Precio: *
               <input
                 name="precio"
@@ -1336,22 +1625,25 @@ function MedicamentosPage() {
                 min={0}
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="0.00"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Stock: *
               <input
                 name="stock"
@@ -1362,22 +1654,25 @@ function MedicamentosPage() {
                 min={0}
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="0"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Stock Mínimo: *
               <input
                 name="stockMinimo"
@@ -1388,22 +1683,25 @@ function MedicamentosPage() {
                 min={0}
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="0"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Fecha Caducidad:
               <input
                 name="fechaCaducidad"
@@ -1412,21 +1710,24 @@ function MedicamentosPage() {
                 onChange={handleChange}
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
                 }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Código Barras:
               <input
                 name="codigoBarras"
@@ -1436,22 +1737,27 @@ function MedicamentosPage() {
                 maxLength="100"
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                 }}
                 placeholder="Ingrese el código de barras"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
             <label
-              style={{
-                gridColumn: "1 / -1",
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
+              className="form-field-block"
+              style={{ gridColumn: "1 / -1" }}
             >
               Descripción:
               <textarea
@@ -1459,26 +1765,30 @@ function MedicamentosPage() {
                 value={form.descripcion}
                 onChange={handleChange}
                 maxLength="200"
-                rows={3}
+                rows={4}
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
                   resize: "vertical",
+                  fontFamily: "inherit",
                 }}
                 placeholder="Ingrese la descripción"
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
+                }}
               />
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Categoría:
               <select
                 name="categoria"
@@ -1487,10 +1797,21 @@ function MedicamentosPage() {
                 required
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
+                  backgroundColor: "#fff",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
                 }}
               >
                 {categorias.map((cat) => (
@@ -1500,14 +1821,7 @@ function MedicamentosPage() {
                 ))}
               </select>
             </label>
-            <label
-              style={{
-                marginBottom: "10px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-              }}
-            >
+            <label className="form-field-block">
               Estado:
               <select
                 name="estado"
@@ -1516,10 +1830,21 @@ function MedicamentosPage() {
                 required
                 style={{
                   width: "100%",
-                  padding: "8px",
-                  marginTop: "4px",
-                  borderRadius: "4px",
-                  border: "1px solid #ddd",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  border: "2px solid #e0e0e0",
+                  fontSize: "14px",
+                  transition: "border-color 0.2s, box-shadow 0.2s",
+                  backgroundColor: "#fff",
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#1976d2";
+                  e.target.style.boxShadow =
+                    "0 0 0 3px rgba(25, 118, 210, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e0e0e0";
+                  e.target.style.boxShadow = "none";
                 }}
               >
                 {estados.map((est) => (
@@ -1530,36 +1855,382 @@ function MedicamentosPage() {
               </select>
             </label>
             <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: "10px",
-              }}
+              className="form-field-block"
+              style={{ gridColumn: "1 / -1" }}
             >
-              <input
-                name="requiereReceta"
-                type="checkbox"
-                checked={form.requiereReceta}
-                onChange={handleChange}
-                style={{ marginRight: 8 }}
-              />
-              Requiere Receta
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "12px" }}
+              >
+                <input
+                  name="requiereReceta"
+                  type="checkbox"
+                  checked={form.requiereReceta}
+                  onChange={handleChange}
+                  style={{
+                    width: "18px",
+                    height: "18px",
+                    accentColor: "#1976d2",
+                  }}
+                />
+                <span style={{ fontSize: "14px", fontWeight: "500" }}>
+                  Requiere Receta
+                </span>
+              </div>
             </label>
           </div>
-          <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
-            <Button type="submit" disabled={loading}>
+          <div
+            style={{
+              display: "flex",
+              gap: "16px",
+              marginTop: "24px",
+              paddingTop: "20px",
+              borderTop: "1px solid #e0e0e0",
+            }}
+          >
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                flex: 1,
+                padding: "10px 20px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: "#1976d2",
+                color: "white",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
+                transition: "all 0.2s ease",
+                boxShadow: "0 2px 4px rgba(25, 118, 210, 0.2)",
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.target.style.backgroundColor = "#1256a3";
+                  e.target.style.transform = "translateY(-1px)";
+                  e.target.style.boxShadow =
+                    "0 4px 8px rgba(25, 118, 210, 0.3)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "#1976d2";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 2px 4px rgba(25, 118, 210, 0.2)";
+              }}
+            >
               {loading ? "Actualizando..." : "Actualizar"}
-            </Button>
-            <Button
+            </button>
+            <button
               type="button"
-              className="secondary"
               onClick={() => setOpenEdit(false)}
+              style={{
+                flex: 1,
+                padding: "10px 20px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: "#ff6b6b",
+                color: "white",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = "#ff5252";
+                e.target.style.transform = "translateY(-1px)";
+                e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "#ff6b6b";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+              }}
             >
               Cancelar
-            </Button>
+            </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal para detalles */}
+      <Modal
+        open={openDetails}
+        onClose={() => setOpenDetails(false)}
+        title="Detalles del Medicamento"
+      >
+        {selected ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "16px",
+              maxHeight: "70vh",
+              overflowY: "auto",
+              padding: "8px",
+              width: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            <div>
+              <h3
+                style={{
+                  color: "#1976d2",
+                  marginBottom: "16px",
+                  borderBottom: "2px solid #e3f2fd",
+                  paddingBottom: "8px",
+                }}
+              >
+                Información Básica
+              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                <div>
+                  <strong style={{ color: "#555", fontSize: "14px" }}>
+                    ID:
+                  </strong>
+                  <span style={{ marginLeft: "8px", fontSize: "15px" }}>
+                    {selected.id}
+                  </span>
+                </div>
+                <div>
+                  <strong style={{ color: "#555", fontSize: "14px" }}>
+                    Nombre:
+                  </strong>
+                  <span style={{ marginLeft: "8px", fontSize: "15px" }}>
+                    {selected.nombre}
+                  </span>
+                </div>
+                <div>
+                  <strong style={{ color: "#555", fontSize: "14px" }}>
+                    Principio Activo:
+                  </strong>
+                  <span style={{ marginLeft: "8px", fontSize: "15px" }}>
+                    {selected.principioActivo || "-"}
+                  </span>
+                </div>
+                <div>
+                  <strong style={{ color: "#555", fontSize: "14px" }}>
+                    Presentación:
+                  </strong>
+                  <span style={{ marginLeft: "8px", fontSize: "15px" }}>
+                    {selected.presentacion || "-"}
+                  </span>
+                </div>
+                <div>
+                  <strong style={{ color: "#555", fontSize: "14px" }}>
+                    Concentración:
+                  </strong>
+                  <span style={{ marginLeft: "8px", fontSize: "15px" }}>
+                    {selected.concentracion || "-"}
+                  </span>
+                </div>
+                <div>
+                  <strong style={{ color: "#555", fontSize: "14px" }}>
+                    Laboratorio:
+                  </strong>
+                  <span style={{ marginLeft: "8px", fontSize: "15px" }}>
+                    {selected.laboratorio || "-"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3
+                style={{
+                  color: "#1976d2",
+                  marginBottom: "16px",
+                  borderBottom: "2px solid #e3f2fd",
+                  paddingBottom: "8px",
+                }}
+              >
+                Información Comercial
+              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                <div>
+                  <strong style={{ color: "#555", fontSize: "14px" }}>
+                    Precio:
+                  </strong>
+                  <span
+                    style={{
+                      marginLeft: "8px",
+                      fontSize: "15px",
+                      fontWeight: "bold",
+                      color: "#2e7d32",
+                    }}
+                  >
+                    ${selected.precio || "0.00"}
+                  </span>
+                </div>
+                <div>
+                  <strong style={{ color: "#555", fontSize: "14px" }}>
+                    Stock Actual:
+                  </strong>
+                  <span
+                    style={{
+                      marginLeft: "8px",
+                      fontSize: "15px",
+                      fontWeight: "bold",
+                      color:
+                        (selected.stock || 0) <= (selected.stockMinimo || 0)
+                          ? "#d32f2f"
+                          : "#2e7d32",
+                    }}
+                  >
+                    {selected.stock || "0"}
+                  </span>
+                </div>
+                <div>
+                  <strong style={{ color: "#555", fontSize: "14px" }}>
+                    Stock Mínimo:
+                  </strong>
+                  <span style={{ marginLeft: "8px", fontSize: "15px" }}>
+                    {selected.stockMinimo || "0"}
+                  </span>
+                </div>
+                <div>
+                  <strong style={{ color: "#555", fontSize: "14px" }}>
+                    Código Barras:
+                  </strong>
+                  <span style={{ marginLeft: "8px", fontSize: "15px" }}>
+                    {selected.codigoBarras || "-"}
+                  </span>
+                </div>
+                <div>
+                  <strong style={{ color: "#555", fontSize: "14px" }}>
+                    Categoría:
+                  </strong>
+                  <span style={{ marginLeft: "8px", fontSize: "15px" }}>
+                    {selected.categoria || "-"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ gridColumn: "1 / -1" }}>
+              <h3
+                style={{
+                  color: "#1976d2",
+                  marginBottom: "16px",
+                  borderBottom: "2px solid #e3f2fd",
+                  paddingBottom: "8px",
+                }}
+              >
+                Información Adicional
+              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                <div>
+                  <strong style={{ color: "#555", fontSize: "14px" }}>
+                    Descripción:
+                  </strong>
+                  <p
+                    style={{
+                      marginLeft: "8px",
+                      fontSize: "15px",
+                      marginTop: "4px",
+                      padding: "12px",
+                      backgroundColor: "#f8f9fa",
+                      borderRadius: "6px",
+                      border: "1px solid #e9ecef",
+                    }}
+                  >
+                    {selected.descripcion || "Sin descripción disponible"}
+                  </p>
+                </div>
+                <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+                  <div>
+                    <strong style={{ color: "#555", fontSize: "14px" }}>
+                      Fecha Caducidad:
+                    </strong>
+                    <span
+                      style={{
+                        marginLeft: "8px",
+                        fontSize: "15px",
+                        color: selected.fechaCaducidad
+                          ? new Date(selected.fechaCaducidad) < new Date()
+                            ? "#d32f2f"
+                            : "#2e7d32"
+                          : "#666",
+                      }}
+                    >
+                      {selected.fechaCaducidad
+                        ? selected.fechaCaducidad.slice(0, 10)
+                        : "-"}
+                    </span>
+                  </div>
+                  <div>
+                    <strong style={{ color: "#555", fontSize: "14px" }}>
+                      Estado:
+                    </strong>
+                    <span
+                      style={{
+                        marginLeft: "8px",
+                        padding: "4px 12px",
+                        borderRadius: "16px",
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                        background:
+                          selected.estado === "ACTIVO"
+                            ? "#e8f5e8"
+                            : selected.estado === "INACTIVO"
+                            ? "#fff3e0"
+                            : "#ffebee",
+                        color:
+                          selected.estado === "ACTIVO"
+                            ? "#2e7d32"
+                            : selected.estado === "INACTIVO"
+                            ? "#f57c00"
+                            : "#d32f2f",
+                      }}
+                    >
+                      {selected.estado || "-"}
+                    </span>
+                  </div>
+                  <div>
+                    <strong style={{ color: "#555", fontSize: "14px" }}>
+                      Requiere Receta:
+                    </strong>
+                    <span
+                      style={{
+                        marginLeft: "8px",
+                        padding: "4px 12px",
+                        borderRadius: "16px",
+                        fontSize: "12px",
+                        fontWeight: "bold",
+                        background: selected.requiereReceta
+                          ? "#ffebee"
+                          : "#e8f5e8",
+                        color: selected.requiereReceta ? "#d32f2f" : "#2e7d32",
+                      }}
+                    >
+                      {selected.requiereReceta ? "Sí" : "No"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p>No se seleccionó ningún medicamento para mostrar detalles.</p>
+        )}
       </Modal>
     </div>
   );

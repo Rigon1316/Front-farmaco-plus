@@ -1,9 +1,21 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { FaTimesCircle } from "react-icons/fa";
+import { useModalContext } from "../utils/ModalContext";
 import "./Modal.css";
 
 function Modal({ open, onClose, title, children }) {
+  const { openModal, closeModal } = useModalContext();
+
+  useEffect(() => {
+    if (open) {
+      openModal();
+    } else {
+      closeModal();
+    }
+  }, [open, openModal, closeModal]);
+
   if (!open) return null;
+
   return (
     <div className="modal-overlay modal-fade-in">
       <div className="modal-content">
