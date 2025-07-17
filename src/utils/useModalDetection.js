@@ -34,6 +34,5 @@ export const useModalDetection = () => {
     };
   }, []);
 
-  console.log("useModalDetection hook returning:", isAnyModalOpen);
   return isAnyModalOpen;
 };

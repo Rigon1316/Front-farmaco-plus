@@ -12,6 +12,8 @@ import {
   FaExclamationTriangle,
   FaChevronDown,
   FaCog,
+  FaBoxes,
+  FaTruck,
 } from "react-icons/fa";
 import { useModalDetection } from "../utils/useModalDetection";
 
@@ -49,6 +51,7 @@ export default function Header() {
     "/clientes",
     "/venta",
     "/alertas",
+    "/lote",
   ].includes(location.pathname);
 
   const managementPages = [
@@ -71,6 +74,16 @@ export default function Header() {
       href: "/alertas",
       icon: <FaExclamationTriangle style={{ marginRight: 8 }} />,
       label: "Alertas",
+    },
+    {
+      href: "/lote",
+      icon: <FaBoxes style={{ marginRight: 8 }} />,
+      label: "Lote",
+    },
+    {
+      href: "/proveedor",
+      icon: <FaTruck style={{ marginRight: 8 }} />,
+      label: "Proveedor",
     },
   ];
 

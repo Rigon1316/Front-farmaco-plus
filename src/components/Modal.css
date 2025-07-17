@@ -210,3 +210,24 @@
   min-width: 0; /* Permitir que los elementos se reduzcan si es necesario */
   box-sizing: border-box;
 }
+
+.modal-title-container {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.2rem;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1976d2;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
