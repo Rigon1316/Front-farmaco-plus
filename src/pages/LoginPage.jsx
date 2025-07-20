@@ -1,21 +1,106 @@
 import React, { useState } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const LoginPage = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Normalizar entradas
-    const user = username.trim().toLowerCase();
-    const pass = password.trim().toLowerCase();
-    if (user === "demo" && pass === "demo") {
-      localStorage.setItem("isLoggedIn", "true");
-      window.location.reload();
-    } else {
-      setError("Usuario o contraseña incorrectos");
+    setIsLoading(true);
+    setError("");
+
+    try {
+      // Normalizar entradas
+      const userEmail = email.trim().toLowerCase();
+      const userPassword = password.trim();
+
+      // Validar que los campos no estén vacíos
+      if (!userEmail || !userPassword) {
+        setError("Por favor, completa todos los campos");
+        setIsLoading(false);
+        return;
+      }
+
+      // Verificar credenciales locales (temporal hasta que el backend esté listo)
+      const validCredentials = {
+        email: "maques1316@gmail.com",
+        password: "Incipio123",
+      };
+
+      if (
+        userEmail === validCredentials.email &&
+        userPassword === validCredentials.password
+      ) {
+        // Simular token JWT temporal
+        const mockToken = "mock-jwt-token-" + Date.now();
+        const mockRefreshToken = "mock-refresh-token-" + Date.now();
+
+        // Guardar token en localStorage
+        localStorage.setItem("jwtToken", mockToken);
+        localStorage.setItem("refreshToken", mockRefreshToken);
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("currentUser", userEmail);
+
+        // Recargar la página para actualizar el estado de autenticación
+        window.location.reload();
+        return;
+      }
+
+      // Si las credenciales locales no coinciden, intentar con el backend
+      try {
+        const response = await fetch(
+          "http://localhost:8080/api/auth/authenticate",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: userEmail,
+              password: userPassword,
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+
+          // Guardar token en localStorage
+          localStorage.setItem("jwtToken", data.token);
+          localStorage.setItem("refreshToken", data.refreshToken);
+          localStorage.setItem("isLoggedIn", "true");
+          localStorage.setItem("currentUser", userEmail);
+
+          // Recargar la página para actualizar el estado de autenticación
+          window.location.reload();
+        } else {
+          // Manejar diferentes tipos de errores
+          if (response.status === 401) {
+            setError("Credenciales incorrectas");
+          } else if (response.status === 404) {
+            setError("Usuario no encontrado");
+          } else {
+            setError("Error en el servidor. Intenta nuevamente.");
+          }
+        }
+      } catch (backendError) {
+        console.error("Error de conexión con backend:", backendError);
+        setError("Credenciales incorrectas");
+      }
+    } catch (error) {
+      console.error("Error general:", error);
+      setError("Error de conexión. Verifica que el servidor esté funcionando.");
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -71,6 +156,7 @@ const LoginPage = () => {
         >
           Iniciar sesión
         </h2>
+
         <div style={{ marginBottom: 18, width: "100%" }}>
           <label
             style={{
@@ -80,13 +166,14 @@ const LoginPage = () => {
               fontWeight: 600,
             }}
           >
-            Usuario
+            Email
           </label>
           <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             autoFocus
+            disabled={isLoading}
             style={{
               width: "100%",
               padding: "12px 10px",
@@ -96,13 +183,15 @@ const LoginPage = () => {
               outline: "none",
               transition: "border 0.2s",
               boxSizing: "border-box",
+              opacity: isLoading ? 0.7 : 1,
             }}
-            autoComplete="username"
-            placeholder="Usuario"
+            autoComplete="email"
+            placeholder="maques1316@gmail.com"
             onFocus={(e) => (e.target.style.border = "1.5px solid #4882e7")}
             onBlur={(e) => (e.target.style.border = "1.5px solid #b6c6e3")}
           />
         </div>
+
         <div style={{ marginBottom: 18, width: "100%" }}>
           <label
             style={{
@@ -114,26 +203,60 @@ const LoginPage = () => {
           >
             Contraseña
           </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "12px 10px",
-              borderRadius: 8,
-              border: "1.5px solid #b6c6e3",
-              fontSize: 16,
-              outline: "none",
-              transition: "border 0.2s",
-              boxSizing: "border-box",
-            }}
-            autoComplete="current-password"
-            placeholder="Contraseña"
-            onFocus={(e) => (e.target.style.border = "1.5px solid #4882e7")}
-            onBlur={(e) => (e.target.style.border = "1.5px solid #b6c6e3")}
-          />
+          <div style={{ position: "relative" }}>
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+              style={{
+                width: "100%",
+                padding: "12px 10px",
+                paddingRight: "45px",
+                borderRadius: 8,
+                border: "1.5px solid #b6c6e3",
+                fontSize: 16,
+                outline: "none",
+                transition: "border 0.2s",
+                boxSizing: "border-box",
+                opacity: isLoading ? 0.7 : 1,
+              }}
+              autoComplete="current-password"
+              placeholder="Incipio123"
+              onFocus={(e) => (e.target.style.border = "1.5px solid #4882e7")}
+              onBlur={(e) => (e.target.style.border = "1.5px solid #b6c6e3")}
+            />
+            <button
+              type="button"
+              onClick={togglePasswordVisibility}
+              disabled={isLoading}
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                cursor: isLoading ? "not-allowed" : "pointer",
+                color: "#666",
+                fontSize: "16px",
+                padding: "4px",
+                borderRadius: "4px",
+                transition: "color 0.2s",
+                opacity: isLoading ? 0.5 : 1,
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoading) e.target.style.color = "#1976d2";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.color = "#666";
+              }}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
         </div>
+
         {error && (
           <div
             style={{
@@ -141,30 +264,36 @@ const LoginPage = () => {
               marginBottom: 16,
               textAlign: "center",
               fontWeight: 600,
+              fontSize: 14,
             }}
           >
             {error}
           </div>
         )}
+
         <button
           type="submit"
+          disabled={isLoading}
           style={{
             width: "100%",
-            background: "linear-gradient(90deg, #4882e7 0%, #1976d2 100%)",
+            background: isLoading
+              ? "#ccc"
+              : "linear-gradient(90deg, #4882e7 0%, #1976d2 100%)",
             color: "#fff",
             border: "none",
             borderRadius: 8,
             padding: "13px 0",
             fontWeight: 700,
             fontSize: 17,
-            cursor: "pointer",
+            cursor: isLoading ? "not-allowed" : "pointer",
             marginTop: 8,
             boxShadow: "0 2px 8px rgba(72,130,231,0.10)",
             letterSpacing: 0.5,
             transition: "background 0.2s",
+            opacity: isLoading ? 0.7 : 1,
           }}
         >
-          Entrar
+          {isLoading ? "Iniciando sesión..." : "Entrar"}
         </button>
       </form>
     </div>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { FaTrash } from "react-icons/fa";
-import { FaShoppingCart } from "react-icons/fa";
+import { FaShoppingCart, FaPlus } from "react-icons/fa";
 import Button from "../components/Button";
+import Modal from "../components/Modal";
 
 const API_URL = "http://localhost:8080/api/ventas";
 
@@ -15,6 +16,47 @@ function VentaPage() {
   const [filtro, setFiltro] = useState("todos"); // Nuevo estado para el filtro
   const [selected, setSelected] = useState(null); // Estado para la fila seleccionada
   const itemsPerPage = 10;
+  const [openAdd, setOpenAdd] = useState(false);
+  const [form, setForm] = useState({
+    numeroFactura: "",
+    subtotal: "",
+    iva: "",
+    total: "",
+    fecha: "",
+    cliente: "",
+    metodoPago: "",
+    estado: "",
+    observaciones: "",
+  });
+  const [iva, setIva] = useState(0.15); // Valor por defecto
+  const [clientes, setClientes] = useState([]);
+  const [medicamentos, setMedicamentos] = useState([]);
+
+  // Estado para los detalles de venta
+  const [detalles, setDetalles] = useState([
+    {
+      medicamentoId: "",
+      cantidad: 1,
+      precioUnitario: "",
+      subtotal: 0,
+      observaciones: "",
+    },
+  ]);
+
+  // Estado para info de producto buscado en cada detalle
+  const [productosBuscados, setProductosBuscados] = useState([]);
+
+  const [clienteIdInput, setClienteIdInput] = useState("");
+  const [clienteEncontrado, setClienteEncontrado] = useState(null);
+  const [clienteError, setClienteError] = useState("");
+
+  const metodoPagoOptions = [
+    "EFECTIVO",
+    "TARJETA_CREDITO",
+    "TARJETA_DEBITO",
+    "TRANSFERENCIA",
+  ];
+  const estadoOptions = ["PAGADA", "PENDIENTE", "CANCELADA", "DEVUELTA"];
 
   useEffect(() => {
     fetchVentas();
@@ -29,6 +71,52 @@ function VentaPage() {
       return () => clearTimeout(timer);
     }
   }, [error, success]);
+
+  // Al abrir el modal, obtener el IVA del backend
+  useEffect(() => {
+    if (openAdd) {
+      fetch("http://localhost:8080/api/ventas/iva")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.iva) setIva(Number(data.iva));
+        })
+        .catch(() => setIva(0.15));
+    }
+  }, [openAdd]);
+
+  // Cargar clientes y medicamentos al abrir el modal
+  useEffect(() => {
+    if (openAdd) {
+      fetch("http://localhost:8080/api/clientes")
+        .then((res) => res.json())
+        .then((data) => setClientes(data || []));
+      fetch("http://localhost:8080/api/medicamentos")
+        .then((res) => res.json())
+        .then((data) => setMedicamentos(data || []));
+    }
+  }, [openAdd]);
+
+  // Calcular subtotal de los detalles
+  useEffect(() => {
+    setDetalles((detalles) =>
+      detalles.map((det) => {
+        const cantidad = parseFloat(det.cantidad) || 0;
+        const precio = parseFloat(det.precioUnitario) || 0;
+        return { ...det, subtotal: +(cantidad * precio).toFixed(2) };
+      })
+    );
+  }, [
+    detalles.length,
+    detalles.map((d) => d.cantidad + "-" + d.precioUnitario).join(),
+  ]);
+
+  // Calcular subtotal total
+  const subtotalNum = detalles.reduce(
+    (acc, det) => acc + (parseFloat(det.subtotal) || 0),
+    0
+  );
+  const ivaNum = +(subtotalNum * iva).toFixed(2);
+  const totalNum = +(subtotalNum + ivaNum).toFixed(2);
 
   const fetchVentas = async () => {
     setLoading(true);
@@ -188,6 +276,163 @@ function VentaPage() {
     }
   };
 
+  const buscarClientePorId = async (id) => {
+    setClienteError("");
+    setClienteEncontrado(null);
+    if (!id) return;
+    try {
+      const res = await fetch(`http://localhost:8080/api/clientes/${id}`);
+      if (!res.ok) {
+        setClienteError("Cliente no encontrado");
+        return;
+      }
+      const data = await res.json();
+      setClienteEncontrado(data);
+      setForm((f) => ({ ...f, clienteId: data.id }));
+    } catch {
+      setClienteError("Error al buscar cliente");
+    }
+  };
+
+  const buscarProductoPorId = async (id, idx) => {
+    if (!id) return;
+    try {
+      const res = await fetch(`http://localhost:8080/api/medicamentos/${id}`);
+      if (!res.ok) {
+        setProductosBuscados((pb) => {
+          const arr = [...pb];
+          arr[idx] = {
+            error: "Producto no encontrado",
+            nombre: "",
+            precio: "",
+          };
+          return arr;
+        });
+        return;
+      }
+      const data = await res.json();
+      setProductosBuscados((pb) => {
+        const arr = [...pb];
+        arr[idx] = { nombre: data.nombre, precio: data.precio, error: "" };
+        return arr;
+      });
+      setDetalles((ds) =>
+        ds.map((d, i) =>
+          i === idx ? { ...d, precioUnitario: data.precio } : d
+        )
+      );
+    } catch {
+      setProductosBuscados((pb) => {
+        const arr = [...pb];
+        arr[idx] = {
+          error: "Error al buscar producto",
+          nombre: "",
+          precio: "",
+        };
+        return arr;
+      });
+    }
+  };
+
+  // Al enviar el formulario, usa los valores calculados:
+  const handleAddVenta = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      if (!clienteEncontrado) {
+        setError("Debes buscar y seleccionar un cliente válido");
+        setLoading(false);
+        return;
+      }
+      const now = new Date();
+      const fechaActualizacion = now.toISOString().slice(0, 10);
+      const ventaData = {
+        numeroFactura: form.numeroFactura,
+        subtotal: subtotalNum,
+        iva: ivaNum,
+        total: totalNum,
+        metodoPago: form.metodoPago,
+        estado: form.estado,
+        observaciones: form.observaciones || "",
+        fechaVenta: form.fecha,
+        fechaActualizacion,
+        cliente: { id: clienteEncontrado.id },
+        detalles: detalles.map((det, idx) => ({
+          cantidad: Number(det.cantidad),
+          precioUnitario: Number(det.precioUnitario),
+          subtotal: Number(det.subtotal),
+          iva: +(Number(det.subtotal) * iva).toFixed(2),
+          total: +(Number(det.subtotal) + Number(det.subtotal) * iva).toFixed(
+            2
+          ),
+          observaciones: det.observaciones || "",
+        })),
+        pagada: form.estado === "PAGADA",
+        cancelada: form.estado === "CANCELADA",
+      };
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ventaData),
+      });
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Error ${res.status}: ${errorText}`);
+      }
+      setSuccess("Venta agregada exitosamente");
+      setOpenAdd(false);
+      setForm({
+        numeroFactura: "",
+        subtotal: "",
+        iva: "",
+        total: "",
+        fecha: "",
+        cliente: "",
+        metodoPago: "",
+        estado: "",
+        observaciones: "",
+      });
+      setDetalles([
+        {
+          medicamentoId: "",
+          cantidad: 1,
+          precioUnitario: "",
+          subtotal: 0,
+          observaciones: "",
+        },
+      ]);
+      setProductosBuscados([]);
+      setClienteIdInput("");
+      setClienteEncontrado(null);
+      setClienteError("");
+      fetchVentas();
+    } catch (err) {
+      setError(err.message || "No se pudo agregar la venta");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getNextNumeroFactura = (ventas) => {
+    const year = new Date().getFullYear();
+    const prefix = "F001";
+    // Buscar la secuencia máxima entre las ventas con el mismo prefijo y año
+    const secuencias = ventas
+      .map((v) => {
+        const match = /^F001-(\d{4})-(\d{3})$/.exec(v.numeroFactura);
+        if (match && match[1] === year.toString()) {
+          return parseInt(match[2], 10);
+        }
+        return null;
+      })
+      .filter((n) => n !== null && !isNaN(n));
+    const nextSeq = (secuencias.length === 0 ? 1 : Math.max(...secuencias) + 1)
+      .toString()
+      .padStart(3, "0");
+    return `${prefix}-${year}-${nextSeq}`;
+  };
+
   // Paginación
   const totalPages = Math.ceil(ventas.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -211,95 +456,127 @@ function VentaPage() {
       <div
         style={{
           display: "flex",
+          alignItems: "flex-start",
           justifyContent: "space-between",
-          alignItems: "center",
           margin: "20px 0 0 0",
-          gap: 16,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <label
+        {/* Botón a la izquierda */}
+        <Button
+          className="custom-btn"
+          icon={<FaPlus className="btn-icon-add" />}
+          onClick={() => {
+            setForm({
+              ...form,
+              numeroFactura: getNextNumeroFactura(ventas),
+            });
+            setOpenAdd(true);
+          }}
+          disabled={loading}
+        >
+          Agregar Venta
+        </Button>
+        {/* Controles a la derecha, en columna */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            gap: 10,
+            minWidth: 380,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <label
+              htmlFor="busqueda-id"
+              style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#444",
+                marginRight: "8px",
+              }}
+            >
+              Buscar por ID:
+            </label>
+            <form
+              onSubmit={handleBusquedaId}
+              style={{ display: "flex", alignItems: "center" }}
+            >
+              <input
+                id="busqueda-id"
+                type="number"
+                value={busquedaId}
+                onChange={(e) => setBusquedaId(e.target.value)}
+                placeholder="Ingrese ID"
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  backgroundColor: "#fff",
+                  fontSize: "14px",
+                  width: "120px",
+                  marginRight: "8px",
+                }}
+              />
+              <button
+                type="submit"
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  border: "1px solid #1976d2",
+                  backgroundColor: "#1976d2",
+                  color: "#fff",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  fontWeight: "500",
+                }}
+              >
+                Buscar
+              </button>
+            </form>
+          </div>
+          <div
             style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#444",
-              marginRight: "12px",
               display: "flex",
               alignItems: "center",
+              gap: 8,
+              marginTop: 4,
             }}
           >
-            Filtrar ventas:
-          </label>
-          <select
-            value={filtro}
-            onChange={(e) => handleFiltroChange(e.target.value)}
-            style={{
-              padding: "8px 12px",
-              borderRadius: "6px",
-              border: "1px solid #ddd",
-              backgroundColor: "#fff",
-              fontSize: "14px",
-              cursor: "pointer",
-              minWidth: "200px",
-            }}
-          >
-            <option value="todos">Todas las ventas</option>
-            <option value="PAGADA">Ventas pagadas</option>
-            <option value="PENDIENTE">Ventas pendientes</option>
-            <option value="CANCELADA">Ventas canceladas</option>
-            <option value="DEVUELTA">Ventas devueltas</option>
-            <option value="dia">Ventas del día</option>
-            <option value="top">Top ventas</option>
-          </select>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <label
-            htmlFor="busqueda-id"
-            style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#444",
-              marginRight: "8px",
-            }}
-          >
-            Buscar por ID:
-          </label>
-          <form
-            onSubmit={handleBusquedaId}
-            style={{ display: "flex", alignItems: "center" }}
-          >
-            <input
-              id="busqueda-id"
-              type="number"
-              value={busquedaId}
-              onChange={(e) => setBusquedaId(e.target.value)}
-              placeholder="Ingrese ID"
+            <label
+              style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#444",
+                marginRight: "12px",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              Filtrar ventas:
+            </label>
+            <select
+              value={filtro}
+              onChange={(e) => handleFiltroChange(e.target.value)}
               style={{
                 padding: "8px 12px",
                 borderRadius: "6px",
                 border: "1px solid #ddd",
                 backgroundColor: "#fff",
                 fontSize: "14px",
-                width: "120px",
-                marginRight: "8px",
-              }}
-            />
-            <button
-              type="submit"
-              style={{
-                padding: "8px 12px",
-                borderRadius: "6px",
-                border: "1px solid #1976d2",
-                backgroundColor: "#1976d2",
-                color: "#fff",
-                fontSize: "14px",
                 cursor: "pointer",
-                fontWeight: "500",
+                minWidth: "200px",
               }}
             >
-              Buscar
-            </button>
-          </form>
+              <option value="todos">Todas las ventas</option>
+              <option value="PAGADA">Ventas pagadas</option>
+              <option value="PENDIENTE">Ventas pendientes</option>
+              <option value="CANCELADA">Ventas canceladas</option>
+              <option value="DEVUELTA">Ventas devueltas</option>
+              <option value="dia">Ventas del día</option>
+              <option value="top">Top ventas</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -381,7 +658,7 @@ function VentaPage() {
                   zIndex: 3,
                 }}
               >
-                IGV
+                IVA
               </th>
               <th
                 style={{
@@ -512,7 +789,7 @@ function VentaPage() {
                       borderBottom: "1px solid #f0f0f0",
                     }}
                   >
-                    {venta.igv ?? "-"}
+                    {venta.iva ?? "-"}
                   </td>
                   <td
                     style={{
@@ -596,6 +873,483 @@ function VentaPage() {
           ))}
         </div>
       )}
+
+      {/* Modal para agregar venta */}
+      <Modal
+        open={openAdd}
+        onClose={() => setOpenAdd(false)}
+        title="Agregar Nueva Venta"
+      >
+        <form onSubmit={handleAddVenta} style={{ paddingBottom: 48 }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 32,
+              alignItems: "flex-start",
+              flexWrap: "wrap",
+            }}
+          >
+            {/* Columna izquierda: formulario principal */}
+            <div style={{ flex: 1, minWidth: 340, maxWidth: 520 }}>
+              <div className="modal-form-grid">
+                <label>
+                  N° Factura
+                  <input
+                    type="text"
+                    value={form.numeroFactura}
+                    readOnly
+                    style={{
+                      background: "#fff",
+                      color: "#222",
+                      border: "1.5px solid #b6c6e3",
+                      fontWeight: 700,
+                      cursor: "default",
+                    }}
+                  />
+                </label>
+                <label>
+                  Fecha
+                  <input
+                    type="date"
+                    value={form.fecha}
+                    onChange={(e) =>
+                      setForm({ ...form, fecha: e.target.value })
+                    }
+                    required
+                  />
+                </label>
+                <label>
+                  ID Cliente
+                  <div
+                    style={{ display: "flex", gap: 8, alignItems: "center" }}
+                  >
+                    <input
+                      type="number"
+                      value={clienteIdInput}
+                      onChange={(e) => setClienteIdInput(e.target.value)}
+                      onBlur={(e) => buscarClientePorId(e.target.value)}
+                      placeholder="Ingrese ID de cliente"
+                      style={{ width: 180 }}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => buscarClientePorId(clienteIdInput)}
+                      style={{
+                        background: "#1976d2",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 6,
+                        padding: "6px 16px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Buscar
+                    </button>
+                  </div>
+                  {clienteEncontrado && (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        color: "#1976d2",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {clienteEncontrado.nombre} {clienteEncontrado.apellido}{" "}
+                      (DNI: {clienteEncontrado.dni})
+                    </div>
+                  )}
+                  {clienteError && (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        color: "#d32f2f",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {clienteError}
+                    </div>
+                  )}
+                </label>
+              </div>
+              {/* Subtotal, IVA, Total alineados a la izquierda */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 220px",
+                  rowGap: 18,
+                  columnGap: 32,
+                  margin: "32px 0 0 0",
+                  alignItems: "center",
+                  maxWidth: 500,
+                }}
+              >
+                <label
+                  style={{ textAlign: "left", fontWeight: 700, fontSize: 18 }}
+                >
+                  Subtotal
+                </label>
+                <input
+                  type="number"
+                  value={subtotalNum}
+                  readOnly
+                  style={{
+                    background: "#f1f1f1",
+                    color: "#888",
+                    cursor: "default",
+                    fontWeight: 700,
+                    fontSize: 18,
+                    textAlign: "right",
+                    border: "none",
+                    borderRadius: 8,
+                    padding: "10px 18px",
+                  }}
+                />
+                <label
+                  style={{ textAlign: "left", fontWeight: 700, fontSize: 18 }}
+                >
+                  IVA
+                </label>
+                <input
+                  type="number"
+                  value={ivaNum}
+                  readOnly
+                  style={{
+                    background: "#f1f1f1",
+                    color: "#888",
+                    cursor: "default",
+                    fontWeight: 700,
+                    fontSize: 18,
+                    textAlign: "right",
+                    border: "none",
+                    borderRadius: 8,
+                    padding: "10px 18px",
+                  }}
+                />
+                <label
+                  style={{
+                    textAlign: "left",
+                    fontWeight: 700,
+                    fontSize: 20,
+                    color: "#1976d2",
+                  }}
+                >
+                  Total
+                </label>
+                <input
+                  type="number"
+                  value={totalNum}
+                  readOnly
+                  style={{
+                    background: "#f1f1f1",
+                    color: "#1976d2",
+                    cursor: "default",
+                    fontWeight: 900,
+                    fontSize: 22,
+                    textAlign: "right",
+                    border: "none",
+                    borderRadius: 8,
+                    padding: "10px 18px",
+                  }}
+                />
+              </div>
+              <div className="modal-form-grid" style={{ marginTop: 10 }}>
+                <label>
+                  Método de pago
+                  <select
+                    value={form.metodoPago || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, metodoPago: e.target.value })
+                    }
+                    required
+                  >
+                    <option value="">Seleccione...</option>
+                    {metodoPagoOptions.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt.replace("_", " ")}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Estado
+                  <select
+                    value={form.estado || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, estado: e.target.value })
+                    }
+                    required
+                  >
+                    <option value="">Seleccione...</option>
+                    {estadoOptions.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ gridColumn: "1 / -1" }}>
+                  Observaciones
+                  <input
+                    type="text"
+                    value={form.observaciones || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, observaciones: e.target.value })
+                    }
+                    placeholder="Observaciones de la venta"
+                  />
+                </label>
+              </div>
+            </div>
+            {/* Columna derecha: panel de detalles */}
+            <div style={{ flex: 1.2, minWidth: 340, maxWidth: 600 }}>
+              <div className="detalle-panel">
+                <div className="detalle-panel-titulo">Detalles de la venta</div>
+                {/* Títulos de columna */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "70px 110px 130px 120px 110px 90px 1fr",
+                    gap: 10,
+                    fontWeight: 700,
+                    color: "#1976d2",
+                    marginBottom: 8,
+                    fontSize: 15,
+                  }}
+                >
+                  <div>Cant.</div>
+                  <div>ID prod.</div>
+                  <div></div>
+                  <div>Precio</div>
+                  <div>Subtotal</div>
+                  <div></div>
+                  <div>Producto</div>
+                </div>
+                {detalles.map((det, idx) => (
+                  <div
+                    key={idx}
+                    className="detalle-fila"
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "70px 110px 120px 110px 1fr",
+                      gap: 10,
+                      alignItems: "center",
+                      marginBottom: 18,
+                      background: "none",
+                      border: "none",
+                      width: "100%",
+                    }}
+                  >
+                    <input
+                      type="number"
+                      min="1"
+                      value={det.cantidad}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setDetalles((ds) =>
+                          ds.map((d, i) =>
+                            i === idx ? { ...d, cantidad: v } : d
+                          )
+                        );
+                      }}
+                      placeholder="Cantidad"
+                      required
+                    />
+                    <input
+                      type="number"
+                      value={det.medicamentoId || ""}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setDetalles((ds) =>
+                          ds.map((d, i) =>
+                            i === idx ? { ...d, medicamentoId: v } : d
+                          )
+                        );
+                      }}
+                      placeholder="ID producto"
+                      required
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={det.precioUnitario}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setDetalles((ds) =>
+                          ds.map((d, i) =>
+                            i === idx ? { ...d, precioUnitario: v } : d
+                          )
+                        );
+                      }}
+                      placeholder="Precio unitario"
+                      required
+                    />
+                    <input
+                      type="number"
+                      value={det.subtotal}
+                      readOnly
+                      style={{
+                        background: "#f1f1f1",
+                        color: "#888",
+                        cursor: "default",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        buscarProductoPorId(det.medicamentoId, idx)
+                      }
+                      style={{
+                        background: "#1976d2",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 6,
+                        padding: "6px 12px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        justifySelf: "end",
+                        minWidth: 130,
+                      }}
+                    >
+                      Buscar producto
+                    </button>
+                    {detalles.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDetalles((ds) => ds.filter((_, i) => i !== idx))
+                        }
+                        style={{
+                          background: "#ff6b6b",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 6,
+                          padding: "6px 12px",
+                          cursor: "pointer",
+                          minWidth: 90,
+                          gridColumn: "1 / -1",
+                          marginTop: 6,
+                        }}
+                      >
+                        Quitar
+                      </button>
+                    )}
+                    <div style={{ minWidth: 180, gridColumn: "1 / -1" }}>
+                      {productosBuscados[idx]?.nombre && (
+                        <div className="nombre-producto">
+                          {productosBuscados[idx].nombre}
+                        </div>
+                      )}
+                      {productosBuscados[idx]?.error && (
+                        <div className="error-producto">
+                          {productosBuscados[idx].error}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="agregar-detalle-btn"
+                  style={{ marginTop: 10 }}
+                  onClick={() => {
+                    setDetalles([
+                      ...detalles,
+                      {
+                        medicamentoId: "",
+                        cantidad: 1,
+                        precioUnitario: "",
+                        subtotal: 0,
+                        observaciones: "",
+                      },
+                    ]);
+                    setProductosBuscados((pb) => [...pb, {}]);
+                  }}
+                >
+                  Agregar detalle
+                </button>
+              </div>
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: "16px",
+              marginTop: "24px",
+              paddingTop: "20px",
+              borderTop: "1px solid #e0e0e0",
+            }}
+          >
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                flex: 1,
+                padding: "10px 20px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: "#1976d2",
+                color: "white",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
+                transition: "all 0.2s ease",
+                boxShadow: "0 2px 4px rgba(25, 118, 210, 0.2)",
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.target.style.backgroundColor = "#1256a3";
+                  e.target.style.transform = "translateY(-1px)";
+                  e.target.style.boxShadow =
+                    "0 4px 8px rgba(25, 118, 210, 0.3)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "#1976d2";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 2px 4px rgba(25, 118, 210, 0.2)";
+              }}
+            >
+              {loading ? "Guardando..." : "Guardar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpenAdd(false)}
+              style={{
+                flex: 1,
+                padding: "10px 20px",
+                borderRadius: "8px",
+                border: "none",
+                backgroundColor: "#ff6b6b",
+                color: "white",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = "#ff5252";
+                e.target.style.transform = "translateY(-1px)";
+                e.target.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "#ff6b6b";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+          {error && <div className="error-message">{error}</div>}
+          {success && <div className="success-message">{success}</div>}
+        </form>
+      </Modal>
     </div>
   );
 }

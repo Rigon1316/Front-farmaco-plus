@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Button from "../components/Button";
 import Modal from "../components/Modal";
+import { authenticatedFetch } from "../utils/authUtils.js";
 import {
   FaPlus,
   FaEdit,
@@ -81,7 +82,7 @@ function MedicamentosPage() {
     setError("");
     console.log("🔍 Intentando cargar medicamentos desde:", API_URL);
     try {
-      const res = await fetch(API_URL);
+      const res = await authenticatedFetch(API_URL);
       console.log("📡 Respuesta del servidor:", res.status, res.statusText);
       if (!res.ok) {
         const errorText = await res.text();
@@ -91,6 +92,16 @@ function MedicamentosPage() {
       const data = await res.json();
       console.log("✅ Datos recibidos:", data);
       setMedicamentos(data);
+
+      // Si no hay datos y es un token mock, mostrar mensaje informativo
+      if (
+        data.length === 0 &&
+        localStorage.getItem("jwtToken")?.startsWith("mock-jwt-token-")
+      ) {
+        setError(
+          "⚠️ Modo demo activo - Los datos se cargarán cuando el backend esté disponible"
+        );
+      }
     } catch (err) {
       console.error("💥 Error completo:", err);
       setError(`Error de conexión: ${err.message}`);
@@ -104,7 +115,7 @@ function MedicamentosPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_URL}/agotados`);
+      const res = await authenticatedFetch(`${API_URL}/agotados`);
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Error ${res.status}: ${errorText}`);
@@ -124,7 +135,7 @@ function MedicamentosPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_URL}/caducidad?diasAntes=30`);
+      const res = await authenticatedFetch(`${API_URL}/caducidad?diasAntes=30`);
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Error ${res.status}: ${errorText}`);
@@ -149,7 +160,7 @@ function MedicamentosPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_URL}/${id}`);
+      const res = await authenticatedFetch(`${API_URL}/${id}`);
       if (!res.ok) {
         if (res.status === 404) {
           setError("No se encontró un medicamento con ese ID");
@@ -207,9 +218,8 @@ function MedicamentosPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(API_URL, {
+      const res = await authenticatedFetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
           precio: parseFloat(form.precio),
@@ -263,9 +273,8 @@ function MedicamentosPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_URL}/${selected.id}`, {
+      const res = await authenticatedFetch(`${API_URL}/${selected.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
           precio: parseFloat(form.precio),
@@ -299,7 +308,9 @@ function MedicamentosPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      const res = await authenticatedFetch(`${API_URL}/${id}`, {
+        method: "DELETE",
+      });
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Error ${res.status}: ${errorText}`);

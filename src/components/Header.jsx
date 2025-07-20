@@ -16,10 +16,13 @@ import {
   FaTruck,
 } from "react-icons/fa";
 import { useModalDetection } from "../utils/useModalDetection";
+import { logout } from "../utils/authUtils.js";
 
 export default function Header() {
   const [hora, setHora] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const location = useLocation();
   const isAnyModalOpen = useModalDetection();
@@ -42,6 +45,7 @@ export default function Header() {
   useEffect(() => {
     if (isAnyModalOpen) {
       setShowDropdown(false);
+      setShowLogoutModal(false);
     }
   }, [isAnyModalOpen]);
 
@@ -52,6 +56,7 @@ export default function Header() {
     "/venta",
     "/alertas",
     "/lote",
+    "/proveedor",
   ].includes(location.pathname);
 
   const managementPages = [
@@ -95,6 +100,16 @@ export default function Header() {
       top: rect.bottom + 4,
       left: rect.left,
     });
+  };
+
+  // Función para cerrar sesión
+  const handleLogout = () => {
+    logout();
+  };
+
+  // Función para mostrar modal de logout
+  const showLogout = () => {
+    setShowLogoutModal(true);
   };
 
   return (
@@ -347,11 +362,85 @@ export default function Header() {
           <FaUserCircle
             size={32}
             color="#fff"
-            style={{ marginTop: 2 }}
+            style={{
+              marginTop: 2,
+              cursor: "pointer",
+            }}
             title="Usuario"
+            onClick={showLogout}
           />
         </div>
       </div>
+
+      {/* Modal de Logout */}
+      {showLogoutModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10000,
+          }}
+          onClick={() => setShowLogoutModal(false)}
+        >
+          <div
+            style={{
+              background: "#fff",
+              padding: "24px",
+              borderRadius: "12px",
+              minWidth: "300px",
+              textAlign: "center",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginBottom: "16px", color: "#1976d2" }}>
+              Cerrar Sesión
+            </h3>
+            <p style={{ marginBottom: "24px", color: "#666" }}>
+              ¿Estás seguro de que quieres cerrar sesión?
+            </p>
+            <div
+              style={{ display: "flex", gap: "12px", justifyContent: "center" }}
+            >
+              <button
+                onClick={handleLogout}
+                style={{
+                  padding: "10px 20px",
+                  background: "#d32f2f",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                }}
+              >
+                Sí, Cerrar Sesión
+              </button>
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                style={{
+                  padding: "10px 20px",
+                  background: "#666",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontWeight: "600",
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

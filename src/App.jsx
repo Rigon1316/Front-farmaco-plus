@@ -6,12 +6,15 @@ import AlertasPage from "./pages/AlertasPage.jsx";
 import VentaPage from "./pages/VentaPage.jsx";
 import ConsultasIA from "./pages/ConsultasIA.jsx";
 import LotePage from "./pages/LotePage.jsx";
+import ProveedoresPage from "./pages/ProveedoresPage.jsx";
 import MainLayout from "./layouts/MainLayout.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
+import { isTokenValid } from "./utils/authUtils.js";
 import "./App.css";
 
 function App() {
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const isLoggedIn =
+    localStorage.getItem("isLoggedIn") === "true" && isTokenValid();
 
   if (!isLoggedIn) {
     return <LoginPage />;
@@ -28,6 +31,7 @@ function App() {
           <Route path="/venta" element={<VentaPage />} />
           <Route path="/consultas-ia" element={<ConsultasIA />} />
           <Route path="/lote" element={<LotePage />} />
+          <Route path="/proveedor" element={<ProveedoresPage />} />
         </Routes>
       </MainLayout>
     </BrowserRouter>

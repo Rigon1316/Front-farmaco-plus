@@ -1,3 +1,4 @@
+/* --- MODAL GENERAL --- */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -8,8 +9,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100000; /* Aumentado de 1000 para estar por encima del dropdown del menú */
+  z-index: 100000;
   animation: modal-fade-in 0.25s;
+  padding: 40px 0; /* margen superior e inferior */
+  box-sizing: border-box;
 }
 
 .modal-fade-in {
@@ -27,24 +30,42 @@
 
 .modal-content {
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.18);
-  padding: 2rem 2rem 1.5rem 2rem; /* Aumentado el padding horizontal */
-  min-width: 580px;
-  max-width: 90vw; /* Cambiado de 1428px a 90vw para ser responsive */
+  border-radius: 22px;
+  box-shadow: 0 12px 48px rgba(25, 118, 210, 0.18),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 2.5px solid #e3eafc;
+  padding: 2.5rem 3rem 2rem 3rem;
+  min-width: 900px;
+  max-width: 98vw;
   min-height: 120px;
   position: relative;
-  animation: modal-pop-in 0.25s;
-  overflow-x: hidden; /* Prevenir desplazamiento horizontal */
+  animation: modal-pop-in 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1100px) {
+  .modal-content {
+    min-width: 90vw;
+    padding: 1.5rem 1rem 1rem 1rem;
+  }
+}
+@media (max-width: 700px) {
+  .modal-content {
+    min-width: 98vw;
+    padding: 0.5rem 0.2rem 0.5rem 0.2rem;
+    border-radius: 12px;
+  }
 }
 
 @keyframes modal-pop-in {
   from {
-    transform: scale(0.95);
+    transform: translateY(40px) scale(0.97);
     opacity: 0.7;
   }
   to {
-    transform: scale(1);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
@@ -56,6 +77,14 @@
   margin-bottom: 1.2rem;
   border-bottom: 1px solid #e3eafc;
   padding-bottom: 0.5rem;
+}
+
+.modal-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1976d2;
+  margin: 0;
+  letter-spacing: 0.5px;
 }
 
 .modal-close {
@@ -80,154 +109,200 @@
   margin-top: 0.5rem;
   width: 100%;
   box-sizing: border-box;
-  /* Ocultar barras de desplazamiento pero mantener funcionalidad */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
 }
 
-/* Ocultar scrollbar para WebKit browsers (Chrome, Safari, Edge) */
-.modal-body::-webkit-scrollbar {
-  display: none;
-}
-
-/* Ocultar scrollbar en elementos con overflow dentro del modal */
-.modal-content * {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
-}
-
-.modal-content *::-webkit-scrollbar {
-  display: none;
-}
-
-.boton-cancelar {
-  background: #d32f2f;
-  color: #fff;
-  border: 1.5px solid #d32f2f;
-  border-radius: 6px;
-  padding: 10px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  min-width: 140px;
-  box-sizing: border-box;
-  display: inline-block;
-  margin-left: 10px;
-}
-.boton-cancelar:hover {
-  background: #b71c1c;
-  border: 1.5px solid #b71c1c;
-  color: #fff;
-}
-
-/* Alinear los botones en el modal */
-.modal-body form > div[style*="display: flex"] {
-  justify-content: flex-start;
-  align-items: center;
+/* --- FORMULARIO DEL MODAL --- */
+.modal-body form {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
-/* Estilos básicos para los botones del modal */
-.modal-body form button {
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid #ddd;
-  background: #fff;
+.modal-body label {
+  font-size: 1rem;
+  font-weight: 600;
   color: #333;
-  transition: all 0.2s;
+  margin-bottom: 4px;
 }
 
-.modal-body form button:hover {
-  background: #f5f5f5;
-  border-color: #ccc;
-}
-
-.modal-body form button[type="submit"] {
-  background: #1976d2;
-  color: white;
-  border-color: #1976d2;
-}
-
-.modal-body form button[type="submit"]:hover {
-  background: #1565c0;
-  border-color: #1565c0;
-}
-
-.modal-body form button.secondary {
-  background: #f5f5f5;
-  color: #333;
-  border-color: #ddd;
-}
-
-.modal-body form button.secondary:hover {
-  background: #e0e0e0;
-  border-color: #ccc;
-}
-
-.form-field-block {
-  margin-bottom: 20px; /* Reducido de 28px para menos separación vertical */
-  display: flex;
-  flex-direction: column;
-  gap: 8px; /* Reducido de 12px para menos separación entre label e input */
-}
-
-.form-field-block label,
-.form-field-block {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #444;
-  margin-bottom: 4px; /* Reducido de 8px para menos separación del label */
-  padding-left: 8px; /* Espacio aumentado desde el borde izquierdo */
-  padding-right: 8px; /* Espacio aumentado desde el borde derecho */
-}
-
-.form-field-block > input,
-.form-field-block > select,
-.form-field-block > textarea {
-  margin-top: 4px; /* Reducido de 8px para menos separación */
-}
-
-/* Estilo especial para el checkbox */
-.form-field-block:has(input[type="checkbox"]) {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Separación horizontal entre columnas del formulario */
-.formulario-medicamento-grid {
-  column-gap: 16px; /* Reducido de 20px para menos separación horizontal entre columnas */
-  row-gap: 16px; /* Reducido de 24px para menos separación vertical entre filas */
-  width: 100%; /* Asegurar que el grid ocupe todo el ancho disponible */
-  box-sizing: border-box; /* Incluir padding y border en el ancho */
-}
-
-/* Asegurar que los elementos del formulario no se desborden */
-.formulario-medicamento-grid > * {
-  min-width: 0; /* Permitir que los elementos se reduzcan si es necesario */
+.modal-body input,
+.modal-body select,
+.modal-body textarea {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #b6c6e3;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
+  margin-top: 2px;
+  background: #f9fbfd;
+}
+.modal-body input:focus,
+.modal-body select:focus,
+.modal-body textarea:focus {
+  border: 1.5px solid #1976d2;
+  box-shadow: 0 0 0 2px #1976d233;
+  background: #fff;
 }
 
-.modal-title-container {
+/* --- BOTONES DEL MODAL --- */
+.modal-body .modal-actions {
   display: flex;
-  align-items: center;
-  gap: 0.8rem;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
-
-.modal-icon {
+.modal-body button,
+.modal-body .modal-actions button {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 1px 4px rgba(25, 118, 210, 0.08);
+  min-width: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 0.2rem;
+}
+.modal-body button[type="submit"] {
+  background: #1976d2;
+  color: #fff;
+}
+.modal-body button[type="submit"]:hover {
+  background: #1256a3;
+}
+.modal-body button.cancelar,
+.modal-body .modal-actions .cancelar {
+  background: #d32f2f;
+  color: #fff;
+}
+.modal-body button.cancelar:hover,
+.modal-body .modal-actions .cancelar:hover {
+  background: #b71c1c;
 }
 
-.modal-title {
-  font-size: 1.5rem;
+/* --- MENSAJES DE ERROR Y ÉXITO --- */
+.modal-body .error-message {
+  color: #d32f2f;
+  margin-top: 8px;
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+.modal-body .success-message {
+  color: #388e3c;
+  margin-top: 8px;
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+
+/* --- FORMULARIO EN GRID ORDENADO --- */
+.modal-body .modal-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 24px;
+  margin-bottom: 18px;
+}
+@media (max-width: 700px) {
+  .modal-body .modal-form-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.modal-body .modal-form-grid label {
+  display: flex;
+  flex-direction: column;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0;
+  gap: 4px;
+}
+
+.modal-body .modal-actions {
+  display: flex;
+  gap: 14px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.detalle-panel {
+  background: #f7fafd;
+  border: 1.5px solid #e3eafc;
+  border-radius: 14px;
+  padding: 22px 18px 16px 18px;
+  margin: 18px 0 24px 0;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.07);
+}
+.detalle-panel-titulo {
+  font-size: 1.18rem;
   font-weight: 700;
   color: #1976d2;
-  margin: 0;
+  margin-bottom: 12px;
   letter-spacing: 0.5px;
+}
+.detalle-fila {
+  display: grid;
+  grid-template-columns: 70px 110px 130px 120px 110px 90px 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.detalle-fila input,
+.detalle-fila button {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.detalle-fila .nombre-producto {
+  color: #1976d2;
+  font-weight: 600;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.detalle-fila .error-producto {
+  color: #d32f2f;
+  font-weight: 600;
+  font-size: 1rem;
+}
+.detalle-panel .agregar-detalle-btn {
+  display: block;
+  margin-left: auto;
+  margin-top: 10px;
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.detalle-panel .agregar-detalle-btn:hover {
+  background: #1256a3;
+}
+@media (max-width: 1100px) {
+  .detalle-fila {
+    grid-template-columns: 60px 80px 100px 90px 90px 80px 1fr;
+    gap: 7px;
+  }
+}
+@media (max-width: 700px) {
+  .detalle-fila {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .detalle-fila .nombre-producto,
+  .detalle-fila .error-producto {
+    grid-column: 1 / -1;
+  }
 }
