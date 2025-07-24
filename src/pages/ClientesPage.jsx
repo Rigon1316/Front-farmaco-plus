@@ -197,11 +197,28 @@ function ClientesPage() {
         throw new Error(`Error ${res.status}: ${errorText}`);
       }
 
+      // Actualizar el cliente en el array local en lugar de recargar todos los clientes
+      const updatedCliente = await res.json();
+      
+      // Si el servidor no devuelve el cliente actualizado, creamos uno combinando los datos del formulario
+      const clienteActualizado = updatedCliente || {
+        ...selected,
+        ...clienteData,
+        id: selected.id
+      };
+      
+      // Actualizar el cliente en el array local manteniendo el mismo orden
+      setClientes(prevClientes => 
+        prevClientes.map(cliente => 
+          cliente.id === selected.id ? clienteActualizado : cliente
+        )
+      );
+
       setSuccess("Cliente actualizado exitosamente");
       setOpenEdit(false);
       setSelected(null);
       setForm(initialForm);
-      fetchClientes();
+      // No llamamos a fetchClientes() para mantener el orden
     } catch (err) {
       console.error("Error updating cliente:", err);
       setError(err.message || "No se pudo editar el cliente");

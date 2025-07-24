@@ -273,27 +273,50 @@ function MedicamentosPage() {
     setLoading(true);
     setError("");
     try {
+      const medicamentoData = {
+        ...form,
+        precio: parseFloat(form.precio),
+        stock: parseInt(form.stock),
+        stockMinimo: parseInt(form.stockMinimo),
+        fechaCaducidad: form.fechaCaducidad
+          ? new Date(form.fechaCaducidad).toISOString()
+          : null,
+      };
+      
       const res = await authenticatedFetch(`${API_URL}/${selected.id}`, {
         method: "PUT",
-        body: JSON.stringify({
-          ...form,
-          precio: parseFloat(form.precio),
-          stock: parseInt(form.stock),
-          stockMinimo: parseInt(form.stockMinimo),
-          fechaCaducidad: form.fechaCaducidad
-            ? new Date(form.fechaCaducidad).toISOString()
-            : null,
-        }),
+        body: JSON.stringify(medicamentoData),
       });
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Error ${res.status}: ${errorText}`);
       }
+      
+      // Actualizar el medicamento en el array local en lugar de recargar todos los medicamentos
+      const updatedMedicamento = await res.json();
+      
+      // Si el servidor no devuelve el medicamento actualizado, creamos uno combinando los datos del formulario
+      const medicamentoActualizado = updatedMedicamento || {
+        ...selected,
+        ...medicamentoData,
+        id: selected.id
+      };
+      
+      // Actualizar el medicamento en el array local manteniendo el mismo orden
+      setMedicamentos(prevMedicamentos => 
+        prevMedicamentos.map(medicamento => 
+          medicamento.id === selected.id ? medicamentoActualizado : medicamento
+        )
+      );
+      
       setSuccess("Medicamento actualizado exitosamente");
       setOpenEdit(false);
       setSelected(null);
       setForm(initialForm);
-      fetchMedicamentos();
+      
+      // No llamamos a fetchMedicamentos() para mantener el orden
+      // Si estamos en un filtro especial, verificamos si el medicamento actualizado sigue cumpliendo con el criterio
+      // Si no cumple, podríamos mostrar un mensaje informativo, pero mantenemos la lista como está
     } catch (err) {
       console.error("Error updating medicamento:", err);
       setError(err.message || "No se pudo editar el medicamento");
