@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   FaHome,
@@ -26,6 +26,7 @@ export default function Header() {
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const location = useLocation();
   const isAnyModalOpen = useModalDetection();
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -48,6 +49,20 @@ export default function Header() {
       setShowLogoutModal(false);
     }
   }, [isAnyModalOpen]);
+
+  // Cerrar el dropdown al hacer click fuera
+  useEffect(() => {
+    if (!showDropdown) return;
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showDropdown]);
 
   // Verificar si estamos en una página de gestión
   const isManagementPage = [
@@ -203,13 +218,13 @@ export default function Header() {
             <div
               style={{ position: "relative", zIndex: 9999 }}
               className="dropdown-container"
+              ref={dropdownRef}
               onMouseEnter={(e) => {
                 if (!isAnyModalOpen) {
                   calculateDropdownPosition(e);
                   setShowDropdown(true);
                 }
               }}
-              onMouseLeave={() => setShowDropdown(false)}
             >
               <Link
                 to="#"
@@ -248,6 +263,7 @@ export default function Header() {
                   if (isAnyModalOpen) {
                     return;
                   }
+                  setShowDropdown((prev) => !prev);
                 }}
               >
                 <FaCog style={{ marginRight: 8 }} /> Gestión
@@ -281,6 +297,8 @@ export default function Header() {
                     border: "1px solid #e0e0e0",
                     overflow: "hidden",
                   }}
+                  onMouseEnter={() => setShowDropdown(true)}
+                  onMouseLeave={() => setShowDropdown(false)}
                 >
                   {managementPages.map((page, index) => (
                     <div key={page.label}>

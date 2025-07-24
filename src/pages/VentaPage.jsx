@@ -28,7 +28,7 @@ function VentaPage() {
     estado: "",
     observaciones: "",
   });
-  const [iva, setIva] = useState(0.15); // Valor por defecto
+  const [iva, setIva] = useState(0.15);
   const [clientes, setClientes] = useState([]);
   const [medicamentos, setMedicamentos] = useState([]);
 

@@ -14,16 +14,11 @@ import "./MedicamentosPage.css";
 const API_URL = "http://localhost:8080/api/lotes";
 
 const initialForm = {
-  codigo: "",
-  descripcion: "",
-  fechaVencimiento: "",
+  numeroLote: "",
+  fechaEntrada: "",
+  fechaCaducidad: "",
   cantidad: "",
-  contacto: "",
-  direccion: "",
-  email: "",
   estado: "",
-  nombre: "",
-  ruc: "",
 };
 
 function LotePage() {
@@ -104,18 +99,13 @@ function LotePage() {
   const openEditModal = (lote) => {
     setSelected(lote);
     setForm({
-      codigo: lote.codigo || "",
-      descripcion: lote.descripcion || "",
-      fechaVencimiento: lote.fechaVencimiento
-        ? lote.fechaVencimiento.slice(0, 10)
+      numeroLote: lote.numeroLote || "",
+      fechaEntrada: lote.fechaEntrada ? lote.fechaEntrada.slice(0, 10) : "",
+      fechaCaducidad: lote.fechaCaducidad
+        ? lote.fechaCaducidad.slice(0, 10)
         : "",
       cantidad: lote.cantidad || "",
-      contacto: lote.contacto || "",
-      direccion: lote.direccion || "",
-      email: lote.email || "",
       estado: lote.estado || "",
-      nombre: lote.nombre || "",
-      ruc: lote.ruc || "",
     });
     setOpenEdit(true);
   };
@@ -129,7 +119,13 @@ function LotePage() {
       const res = await fetch(`${API_URL}/${selected.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          numeroLote: form.numeroLote,
+          fechaEntrada: form.fechaEntrada,
+          fechaCaducidad: form.fechaCaducidad,
+          cantidad: form.cantidad,
+          estado: form.estado,
+        }),
       });
       if (!res.ok) {
         const errorText = await res.text();
@@ -575,6 +571,38 @@ function LotePage() {
               fontSize: 16,
             }}
           />
+          <label style={{ fontWeight: 600, color: "#1976d2" }}>
+            Fecha Entrada
+          </label>
+          <input
+            type="date"
+            name="fechaEntrada"
+            value={form.fechaEntrada || ""}
+            onChange={handleChange}
+            required
+            style={{
+              padding: "10px",
+              borderRadius: 8,
+              border: "1px solid #bdbdbd",
+              fontSize: 16,
+            }}
+          />
+          <label style={{ fontWeight: 600, color: "#1976d2" }}>
+            Fecha Caducidad
+          </label>
+          <input
+            type="date"
+            name="fechaCaducidad"
+            value={form.fechaCaducidad || ""}
+            onChange={handleChange}
+            required
+            style={{
+              padding: "10px",
+              borderRadius: 8,
+              border: "1px solid #bdbdbd",
+              fontSize: 16,
+            }}
+          />
           <label style={{ fontWeight: 600, color: "#1976d2" }}>Cantidad</label>
           <input
             type="number"
@@ -593,22 +621,6 @@ function LotePage() {
           <input
             name="estado"
             value={form.estado || ""}
-            onChange={handleChange}
-            required
-            style={{
-              padding: "10px",
-              borderRadius: 8,
-              border: "1px solid #bdbdbd",
-              fontSize: 16,
-            }}
-          />
-          <label style={{ fontWeight: 600, color: "#1976d2" }}>
-            Fecha Creación
-          </label>
-          <input
-            type="date"
-            name="fechaCreacion"
-            value={form.fechaCreacion || ""}
             onChange={handleChange}
             required
             style={{
