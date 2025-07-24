@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaTrash } from "react-icons/fa";
-import { FaShoppingCart, FaPlus } from "react-icons/fa";
+import { FaTrash, FaEye, FaShoppingCart, FaPlus } from "react-icons/fa";
 import Button from "../components/Button";
 import Modal from "../components/Modal";
 
@@ -17,6 +16,7 @@ function VentaPage() {
   const [selected, setSelected] = useState(null); // Estado para la fila seleccionada
   const itemsPerPage = 10;
   const [openAdd, setOpenAdd] = useState(false);
+  const [openTicket, setOpenTicket] = useState(false); // Nuevo estado para el modal de ver ticket
   const [form, setForm] = useState({
     numeroFactura: "",
     subtotal: "",
@@ -461,21 +461,39 @@ function VentaPage() {
           margin: "20px 0 0 0",
         }}
       >
-        {/* Botón a la izquierda */}
-        <Button
-          className="custom-btn"
-          icon={<FaPlus className="btn-icon-add" />}
-          onClick={() => {
-            setForm({
-              ...form,
-              numeroFactura: getNextNumeroFactura(ventas),
-            });
-            setOpenAdd(true);
-          }}
-          disabled={loading}
-        >
-          Agregar Venta
-        </Button>
+        {/* Botones a la izquierda */}
+        <div style={{ display: "flex", gap: "10px" }}>
+          <Button
+            className="custom-btn"
+            icon={<FaPlus className="btn-icon-add" />}
+            onClick={() => {
+              setForm({
+                ...form,
+                numeroFactura: getNextNumeroFactura(ventas),
+              });
+              setOpenAdd(true);
+            }}
+            disabled={loading}
+          >
+            Agregar Venta
+          </Button>
+          <Button
+            className="custom-btn info"
+            icon={<FaEye />}
+            onClick={() => setOpenTicket(true)}
+            disabled={!selected || loading}
+          >
+            Ver Ticket
+          </Button>
+          <Button
+            className="custom-btn danger"
+            icon={<FaTrash />}
+            onClick={() => selected && handleDelete(selected.id)}
+            disabled={!selected || loading}
+          >
+            Eliminar
+          </Button>
+        </div>
         {/* Controles a la derecha, en columna */}
         <div
           style={{
@@ -1349,6 +1367,97 @@ function VentaPage() {
           {error && <div className="error-message">{error}</div>}
           {success && <div className="success-message">{success}</div>}
         </form>
+      </Modal>
+
+      {/* Modal para ver ticket */}
+      <Modal
+        open={openTicket}
+        onClose={() => setOpenTicket(false)}
+        title={`Ticket de Venta - ${selected?.numeroFactura || ""}`}
+      >
+        {selected && (
+          <div style={{ padding: "0 12px 16px", maxWidth: "600px" }}>
+            <div style={{ marginBottom: "16px" }}>
+              <h3 style={{ color: "#1976d2", marginBottom: "12px", fontSize: "16px" }}>Información de la Venta</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "14px" }}>
+                <div>
+                  <p><strong>N° Factura:</strong> {selected.numeroFactura}</p>
+                  <p><strong>Fecha:</strong> {selected.fechaVenta ? new Date(selected.fechaVenta).toLocaleString() : "-"}</p>
+                  <p><strong>Estado:</strong> {selected.estado || "-"}</p>
+                </div>
+                <div>
+                  <p><strong>Método de Pago:</strong> {selected.metodoPago || "-"}</p>
+                  <p><strong>Total:</strong> {selected.total || "0"}</p>
+                  <p><strong>Observaciones:</strong> {selected.observaciones || "-"}</p>
+                </div>
+              </div>
+            </div>
+            
+            {selected.cliente && (
+              <div style={{ marginBottom: "16px" }}>
+                <h3 style={{ color: "#1976d2", marginBottom: "12px", fontSize: "16px" }}>Cliente</h3>
+                <div style={{ fontSize: "14px" }}>
+                  <p><strong>ID:</strong> {selected.cliente.id} | <strong>Nombre:</strong> {selected.cliente.nombre || "-"}</p>
+                  <p><strong>Teléfono:</strong> {selected.cliente.telefono || "-"} | <strong>Email:</strong> {selected.cliente.email || "-"}</p>
+                </div>
+              </div>
+            )}
+            
+            {selected.detalles && selected.detalles.length > 0 && (
+              <div>
+                <h3 style={{ color: "#1976d2", marginBottom: "12px", fontSize: "16px" }}>Detalles de la Venta</h3>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                  <thead>
+                    <tr style={{ background: "#f5f5f5" }}>
+                      <th style={{ padding: "6px", textAlign: "left", borderBottom: "1px solid #ddd" }}>Producto</th>
+                      <th style={{ padding: "6px", textAlign: "center", borderBottom: "1px solid #ddd" }}>Cant.</th>
+                      <th style={{ padding: "6px", textAlign: "right", borderBottom: "1px solid #ddd" }}>Precio</th>
+                      <th style={{ padding: "6px", textAlign: "right", borderBottom: "1px solid #ddd" }}>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selected.detalles.map((detalle, idx) => (
+                      <tr key={idx}>
+                        <td style={{ padding: "6px", borderBottom: "1px solid #eee" }}>
+                          {detalle.medicamento ? detalle.medicamento.nombre : "Producto"}
+                        </td>
+                        <td style={{ padding: "6px", textAlign: "center", borderBottom: "1px solid #eee" }}>
+                          {detalle.cantidad}
+                        </td>
+                        <td style={{ padding: "6px", textAlign: "right", borderBottom: "1px solid #eee" }}>
+                          {detalle.precioUnitario}
+                        </td>
+                        <td style={{ padding: "6px", textAlign: "right", borderBottom: "1px solid #eee" }}>
+                          {detalle.subtotal}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan="3" style={{ padding: "6px", textAlign: "right", fontWeight: "bold" }}>Subtotal:</td>
+                      <td style={{ padding: "6px", textAlign: "right" }}>{selected.subtotal}</td>
+                    </tr>
+                    <tr>
+                      <td colSpan="3" style={{ padding: "6px", textAlign: "right", fontWeight: "bold" }}>IVA:</td>
+                      <td style={{ padding: "6px", textAlign: "right" }}>{selected.iva}</td>
+                    </tr>
+                    <tr>
+                      <td colSpan="3" style={{ padding: "6px", textAlign: "right", fontWeight: "bold" }}>Total:</td>
+                      <td style={{ padding: "6px", textAlign: "right", fontWeight: "bold" }}>{selected.total}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+            
+            <div style={{ marginTop: "16px", display: "flex", justifyContent: "flex-end" }}>
+              <Button className="custom-btn" onClick={() => setOpenTicket(false)}>
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

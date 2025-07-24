@@ -275,12 +275,29 @@ function DetalleVentaPage() {
         const errorText = await res.text();
         throw new Error(`Error ${res.status}: ${errorText}`);
       }
+      
+      // Actualizar la alerta en el array local en lugar de recargar todas las alertas
+      const updatedAlerta = await res.json();
+      
+      // Si el servidor no devuelve la alerta actualizada, creamos una combinando los datos del formulario
+      const alertaActualizada = updatedAlerta || {
+        ...selected,
+        ...alertaData,
+        id: selected.id
+      };
+      
+      // Actualizar la alerta en el array local manteniendo el mismo orden
+      setAlertas(prevAlertas => 
+        prevAlertas.map(alerta => 
+          alerta.id === selected.id ? alertaActualizada : alerta
+        )
+      );
 
       setSuccess("Alerta actualizada exitosamente");
       setOpenEdit(false);
       setSelected(null);
       setForm(initialForm);
-      fetchAlertas();
+      // No llamamos a fetchAlertas() para mantener el orden
     } catch (err) {
       console.error("Error updating alerta:", err);
       setError(err.message || "No se pudo editar la alerta");

@@ -55,9 +55,6 @@ function HomePage() {
   return (
     <div>
       <h2>Inicio</h2>
-      <p className="welcome-message" style={{ marginBottom: "2rem" }}>
-        Bienvenido al sistema de farmacia Farmaco Plus
-      </p>
 
       {/* Secciones principales */}
       <div style={{ marginBottom: "3rem" }}>
